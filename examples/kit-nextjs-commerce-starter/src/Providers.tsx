@@ -8,6 +8,7 @@ import {
 } from "@sitecore-content-sdk/nextjs";
 import scConfig from "sitecore.config";
 import components from ".sitecore/component-map.client";
+import { OrderCloudProvider } from "./contexts/OrderCloudContext";
 
 export default function Providers({
   children,
@@ -26,7 +27,7 @@ export default function Providers({
       loadImportMap={() => import(".sitecore/import-map.client")}
     >
       <ComponentPropsContext value={componentProps}>
-        {children}
+        <OrderCloudProvider>{children}</OrderCloudProvider>
       </ComponentPropsContext>
     </SitecoreProvider>
   );

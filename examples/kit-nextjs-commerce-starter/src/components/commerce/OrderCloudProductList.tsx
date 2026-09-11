@@ -1,12 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useOrderCloud } from '@/contexts/OrderCloudContext';
 import OrderCloudProductCard, { type OrderCloudProduct } from './OrderCloudProductCard';
-
-type ProductsPayload = {
-  items?: OrderCloudProduct[];
-  error?: string;
-};
 
 type OrderCloudProductListProps = {
   title?: string;
@@ -19,29 +15,28 @@ export default function OrderCloudProductList({
   title = 'OrderCloud products',
   compact = false,
 }: OrderCloudProductListProps) {
+  const { products: productsService, status, error: sessionError } = useOrderCloud();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [products, setProducts] = useState<OrderCloudProduct[]>([]);
   const [refreshSeed, setRefreshSeed] = useState(0);
 
   useEffect(() => {
+    if (status !== 'authenticated') {
+      setProducts([]);
+      setError(status === 'error' ? sessionError?.message ?? 'Unable to start commerce session' : null);
+      setLoading(status === 'loading');
+      return;
+    }
+
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
     const loadProducts = async () => {
       setLoading(true);
       try {
-        const response = await fetch('/api/commerce/products', {
-          signal: controller.signal,
-          cache: 'no-store',
-        });
-        const payload = (await response.json().catch(() => ({}))) as ProductsPayload;
-
-        if (!response.ok) {
-          throw new Error(payload.error || `Products request failed (${response.status})`);
-        }
-
-        setProducts(Array.isArray(payload.items) ? payload.items : []);
+        const payload = await productsService.list({ signal: controller.signal });
+        setProducts(payload.items);
         setError(null);
       } catch (loadError) {
         if (loadError instanceof DOMException && loadError.name === 'AbortError') {
@@ -65,7 +60,7 @@ export default function OrderCloudProductList({
       window.clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [refreshSeed]);
+  }, [productsService, refreshSeed, sessionError, status]);
 
   return (
     <section className="space-y-3 rounded-lg border p-4 text-sm">

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import OrderCloudProductList from '@/components/commerce/OrderCloudProductList';
+import { OrderCloudProvider } from '@/contexts/OrderCloudContext';
 
 type ProductsPayload = {
   items?: Array<{ id?: string; name?: string }>;
@@ -362,7 +363,9 @@ export default function CommerceTestPage() {
         )}
       </div>
 
-      <OrderCloudProductList title="OrderCloud products (component view)" compact />
+      <OrderCloudProvider>
+        <OrderCloudProductList title="OrderCloud products (component view)" compact />
+      </OrderCloudProvider>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Link className="rounded-lg border px-4 py-3 text-sm font-medium hover:bg-muted/60" href="/">
