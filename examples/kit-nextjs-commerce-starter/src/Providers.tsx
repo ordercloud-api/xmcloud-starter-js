@@ -26,9 +26,11 @@ export default function Providers({
       page={page}
       loadImportMap={() => import(".sitecore/import-map.client")}
     >
-      <ComponentPropsContext value={componentProps}>
-        <OrderCloudProvider>{children}</OrderCloudProvider>
-      </ComponentPropsContext>
+      <OrderCloudProvider>
+        <ComponentPropsContext value={componentProps}>
+          {children}
+        </ComponentPropsContext>
+      </OrderCloudProvider>
     </SitecoreProvider>
   );
 }
