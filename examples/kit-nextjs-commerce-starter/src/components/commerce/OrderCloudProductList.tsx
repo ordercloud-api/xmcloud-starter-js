@@ -8,12 +8,15 @@ import {
   buildProductDetailHref,
   resolveProductListDetailPageHref,
 } from '@/lib/commerce/products/href';
+import type { ProductListSource } from '@/lib/commerce/products/list-source';
 import type { CommerceProduct } from '@/lib/commerce/products/types';
 import OrderCloudProductCard from './OrderCloudProductCard';
 
 type OrderCloudProductListProps = {
   title?: string;
   compact?: boolean;
+  source?: ProductListSource;
+  productIds?: string[];
   detailPageHref?: string;
   isAuthoring?: boolean;
 };
@@ -23,6 +26,8 @@ const REQUEST_TIMEOUT_MS = 10_000;
 export default function OrderCloudProductList({
   title = 'OrderCloud products',
   compact = false,
+  source = 'ordercloud-catalog',
+  productIds = [],
   detailPageHref,
   isAuthoring = false,
 }: OrderCloudProductListProps) {
@@ -39,8 +44,19 @@ export default function OrderCloudProductList({
   const [error, setError] = useState<string | null>(null);
   const [products, setProducts] = useState<CommerceProduct[]>([]);
   const [refreshSeed, setRefreshSeed] = useState(0);
+  const selectedIds = productIds.map((productId) => productId.trim()).filter(Boolean);
+  const selectedIdsKey = selectedIds.join('\0');
+  const isPickerList = source === 'ordercloud-picker';
+  const hasPickerSelection = selectedIds.length > 0;
 
   useEffect(() => {
+    if (isPickerList && !hasPickerSelection) {
+      setProducts([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     if (status !== 'authenticated') {
       setProducts([]);
       setError(status === 'error' ? sessionError?.message ?? 'Unable to start commerce session' : null);
@@ -59,7 +75,10 @@ export default function OrderCloudProductList({
     const loadProducts = async () => {
       setLoading(true);
       try {
-        const payload = await productsService.list({ signal: controller.signal });
+        const ids = selectedIdsKey ? selectedIdsKey.split('\0') : [];
+        const payload = isPickerList
+          ? await productsService.listByIds(ids, { signal: controller.signal })
+          : await productsService.list({ signal: controller.signal });
         if (!active) return;
         setProducts(payload.items);
         setError(null);
@@ -89,7 +108,7 @@ export default function OrderCloudProductList({
       window.clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [productsService, refreshSeed, sessionError, status]);
+  }, [hasPickerSelection, isPickerList, productsService, refreshSeed, selectedIdsKey, sessionError, status]);
 
   return (
     <section className="space-y-3 rounded-lg border p-4 text-sm">
@@ -100,7 +119,7 @@ export default function OrderCloudProductList({
           <button
             type="button"
             onClick={() => setRefreshSeed((value) => value + 1)}
-            disabled={loading}
+            disabled={loading || (isPickerList && !hasPickerSelection)}
             className="border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-md border px-2 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? 'Loading...' : 'Retry'}
@@ -115,13 +134,20 @@ export default function OrderCloudProductList({
           Configure Detail Page so product cards can link to the product detail page.
         </p>
       )}
+      {isPickerList && !hasPickerSelection && (
+        <p className="rounded border border-dashed border-amber-500 p-3 text-sm text-amber-700">
+          {isAuthoring
+            ? 'Select OrderCloud products on this listing, or switch Product List Source to catalog.'
+            : 'No OrderCloud products selected for this listing.'}
+        </p>
+      )}
 
-      {!loading && !error && products.length === 0 && (
+      {!loading && !error && products.length === 0 && !(isPickerList && !hasPickerSelection) && (
         <p className="text-amber-700">No products returned from OrderCloud.</p>
       )}
 
       {!loading && !error && products.length > 0 && (
-        <div className={compact ? 'grid gap-2 sm:grid-cols-2' : 'grid gap-3 sm:grid-cols-2'}>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
           {products.map((product, index) => (
             <OrderCloudProductCard
               key={product.id ? `${product.id}-${index}` : `product-${index}`}
