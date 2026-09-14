@@ -101,6 +101,41 @@ describe('ProductsService', () => {
     expect(getProduct).not.toHaveBeenCalled();
   });
 
+  it('loads selected products by ID in order and skips missing ones', async () => {
+    const getProduct = vi.spyOn(Me, 'GetProduct').mockImplementation(async (productId) => {
+      if (productId === 'MISSING') throw new Error('Not found');
+      return { ID: productId, Name: productId } as never;
+    });
+    const service = new ProductsService(request);
+
+    await expect(
+      service.listByIds([' P-2 ', 'P-1', 'P-2', 'MISSING', '']),
+    ).resolves.toEqual({
+      items: [
+        { id: 'P-2', name: 'P-2', images: [] },
+        { id: 'P-1', name: 'P-1', images: [] },
+      ],
+      meta: { totalCount: 2 },
+    });
+    expect(getProduct).toHaveBeenCalledTimes(3);
+    expect(getProduct.mock.calls.map((call) => call[0])).toEqual([
+      'P-2',
+      'P-1',
+      'MISSING',
+    ]);
+  });
+
+  it('returns an empty list without requesting products', async () => {
+    const getProduct = vi.spyOn(Me, 'GetProduct');
+    const service = new ProductsService(request);
+
+    await expect(service.listByIds([' ', ''])).resolves.toEqual({
+      items: [],
+      meta: { totalCount: 0 },
+    });
+    expect(getProduct).not.toHaveBeenCalled();
+  });
+
   it('loads and maps specs assigned to a product', async () => {
     const listSpecs = vi.spyOn(Me, 'ListSpecs').mockResolvedValue({
       Items: [
