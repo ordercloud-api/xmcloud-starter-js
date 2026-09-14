@@ -1,6 +1,7 @@
 export interface CommerceBrowserConfig {
   proxyBaseUrl: string;
   authCookieName: string;
+  clientId?: string;
   anonymousScope?: string;
   catalogId?: string;
 }
@@ -37,9 +38,13 @@ export const getCommerceBrowserConfig = (): CommerceBrowserConfig => {
     throw new Error('Invalid NEXT_PUBLIC_ORDERCLOUD_PROXY_URL: expected an absolute URL');
   }
 
+  const clientId = process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID?.trim();
+
   return {
     proxyBaseUrl: normalizeBaseUrl(proxyBaseUrl),
     authCookieName: getOrderCloudAuthCookieName(),
+    clientId:
+      clientId && !clientId.includes('<') && !clientId.includes('>') ? clientId : undefined,
     anonymousScope: process.env.NEXT_PUBLIC_ORDERCLOUD_ANONYMOUS_SCOPE?.trim() || undefined,
     catalogId: process.env.NEXT_PUBLIC_ORDERCLOUD_CATALOG_ID?.trim() || undefined,
   };
