@@ -18,7 +18,8 @@ const shouldSkipProxy = (req: NextRequest): boolean => {
   return (
     pathname.startsWith('/checkout') ||
     pathname.startsWith('/test') ||
-    pathname.startsWith('/oc-test')
+    pathname.startsWith('/oc-test') ||
+    pathname.startsWith('/ordercloud-product-picker')
   );
 };
 
