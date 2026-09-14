@@ -6,12 +6,16 @@ import { BYOCClientWrapper, FEaaSClientWrapper } from '@sitecore-content-sdk/nex
 import { Form } from '@sitecore-content-sdk/nextjs';
 
 // end of built-in import section
+import * as ProductInfo from 'src/components/product-info/ProductInfo';
+import * as ProductForm from 'src/components/product-form/ProductForm';
 import * as Navigation from 'src/components/navigation/Navigation';
 
 export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['BYOCWrapper', BYOCClientWrapper],
   ['FEaaSWrapper', FEaaSClientWrapper],
   ['Form', Form],
+  ['ProductInfo', { ...ProductInfo }],
+  ['ProductForm', { ...ProductForm }],
   ['Navigation', { ...Navigation }],
 ]);
 

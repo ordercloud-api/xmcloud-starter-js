@@ -57,7 +57,7 @@ export default async function Page({ params }: PageProps) {
 
   return (
     <NextIntlClientProvider>
-      <Providers page={page} componentProps={componentProps}>
+      <Providers page={page} componentProps={componentProps} routePath={path ?? []}>
         <Layout page={page} />
       </Providers>
     </NextIntlClientProvider>

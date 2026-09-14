@@ -24,6 +24,8 @@ export default defineCliConfig({
     exclude: [
       'src/components/content-sdk/*',
       'src/components/commerce/**',
+      'src/components/product-form/ProductSpecFields.tsx',
+      'src/components/product-info/ProductGallery.tsx',
       'src/components/atoms/**',
       'src/components/ui/**',
       '**/*.props.ts',
