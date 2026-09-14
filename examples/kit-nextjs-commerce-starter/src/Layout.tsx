@@ -45,7 +45,7 @@ const Layout = ({ page }: LayoutProps): JSX.Element => {
           )
         ) : (
           <>
-            <header>
+            <header className="sticky top-0 z-50 bg-white">
               <div id="header">
                 {route && (
                   <AppPlaceholder
