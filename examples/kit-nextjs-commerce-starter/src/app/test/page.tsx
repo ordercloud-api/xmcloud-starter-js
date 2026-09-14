@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import OrderCloudCart from '@/components/commerce/OrderCloudCart';
 import OrderCloudProductList from '@/components/commerce/OrderCloudProductList';
 import { OrderCloudProvider } from '@/contexts/OrderCloudContext';
 
@@ -364,7 +365,12 @@ export default function CommerceTestPage() {
       </div>
 
       <OrderCloudProvider>
-        <OrderCloudProductList title="OrderCloud products (component view)" compact />
+        <OrderCloudProductList
+          title="OrderCloud products (component view)"
+          compact
+          detailPageHref="/products"
+        />
+        <OrderCloudCart />
       </OrderCloudProvider>
 
       <div className="grid gap-3 sm:grid-cols-2">
