@@ -5,6 +5,7 @@ import type { CommerceProduct } from '@/lib/commerce/products/types';
 type OrderCloudProductCardProps = {
   product: CommerceProduct;
   compact?: boolean;
+  href?: string;
 };
 
 const formatPrice = (price?: number, currency?: string): string => {
@@ -21,9 +22,13 @@ const formatPrice = (price?: number, currency?: string): string => {
   }
 };
 
-export default function OrderCloudProductCard({ product, compact = false }: OrderCloudProductCardProps) {
-  return (
-    <article className="space-y-2 rounded-md border p-3">
+export default function OrderCloudProductCard({
+  product,
+  compact = false,
+  href,
+}: OrderCloudProductCardProps) {
+  const content = (
+    <>
       {product.imageUrl && (
         <img
           src={product.imageUrl}
@@ -46,6 +51,18 @@ export default function OrderCloudProductCard({ product, compact = false }: Orde
           <p className="text-muted-foreground line-clamp-3 text-xs">{product.description}</p>
         )}
       </div>
-    </article>
+    </>
   );
+
+  const className = 'space-y-2 rounded-md border p-3';
+
+  if (href) {
+    return (
+      <a href={href} className={`block ${className} hover:border-slate-400`}>
+        {content}
+      </a>
+    );
+  }
+
+  return <article className={className}>{content}</article>;
 }

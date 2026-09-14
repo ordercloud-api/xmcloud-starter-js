@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { useOrderCloud } from '@/contexts/OrderCloudContext';
+import { buildProductDetailHref } from '@/lib/commerce/products/href';
 import type { CommerceProduct } from '@/lib/commerce/products/types';
 import OrderCloudProductCard from './OrderCloudProductCard';
 
 type OrderCloudProductListProps = {
   title?: string;
   compact?: boolean;
+  detailPageHref?: string;
+  isAuthoring?: boolean;
 };
 
 const REQUEST_TIMEOUT_MS = 10_000;
@@ -15,6 +18,8 @@ const REQUEST_TIMEOUT_MS = 10_000;
 export default function OrderCloudProductList({
   title = 'OrderCloud products',
   compact = false,
+  detailPageHref,
+  isAuthoring = false,
 }: OrderCloudProductListProps) {
   const { products: productsService, status, error: sessionError } = useOrderCloud();
   const [loading, setLoading] = useState(true);
@@ -92,6 +97,12 @@ export default function OrderCloudProductList({
 
       {loading && <p className="text-muted-foreground">Loading product data...</p>}
       {!loading && error && <p className="text-red-700">{error}</p>}
+      {isAuthoring && !detailPageHref && (
+        <p className="rounded border border-dashed border-amber-500 p-3 text-sm text-amber-700">
+          Configure Detail Page so product cards can link to the product detail page.
+        </p>
+      )}
+
       {!loading && !error && products.length === 0 && (
         <p className="text-amber-700">No products returned from OrderCloud.</p>
       )}
@@ -103,6 +114,7 @@ export default function OrderCloudProductList({
               key={product.id ? `${product.id}-${index}` : `product-${index}`}
               product={product}
               compact={compact}
+              href={buildProductDetailHref(detailPageHref, product.id)}
             />
           ))}
         </div>

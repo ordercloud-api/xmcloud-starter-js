@@ -53,7 +53,7 @@ const decodeSegment = (value: string): string => {
   }
 };
 
-const isSitecoreWildcardSegment = (segment: string): boolean =>
+export const isSitecoreWildcardSegment = (segment: string): boolean =>
   segment === "*" || segment === ",-w-,";
 
 export const resolveProductId = ({
