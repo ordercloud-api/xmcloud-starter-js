@@ -15,17 +15,13 @@ type AnonymousPayload = {
   error?: string;
 };
 
-type ConnectReadinessPayload = {
+type GatewayReadinessPayload = {
   ready: boolean;
   checks: {
-    stripeSecretKey: boolean;
-    stripeWebhookSecret: boolean;
-    stripeConnectedAccountId: boolean;
-    appUrl: boolean;
+    testModeConfigured: boolean;
+    defaultClientConfigured: boolean;
     middlewareClientId: boolean;
     middlewareClientSecret: boolean;
-    orderCloudBuyerClientId: boolean;
-    orderCloudBuyerId: boolean;
   };
   notes: string[];
 };
@@ -49,9 +45,9 @@ type EndpointCheckResult = {
 const CHECKS: EndpointCheck[] = [
   {
     key: 'readiness',
-    label: 'Stripe connect readiness',
+    label: 'Checkout gateway readiness',
     method: 'GET',
-    path: '/api/commerce/checkout/connect/readiness',
+    path: '/api/gateway/readiness',
   },
   {
     key: 'products',
@@ -123,7 +119,7 @@ export default function CommerceTestPage() {
   const [productsError, setProductsError] = useState<string | null>(null);
   const [creatingSession, setCreatingSession] = useState(false);
   const [sessionResult, setSessionResult] = useState<string | null>(null);
-  const [connectReadiness, setConnectReadiness] = useState<ConnectReadinessPayload | null>(null);
+  const [gatewayReadiness, setGatewayReadiness] = useState<GatewayReadinessPayload | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -195,7 +191,7 @@ export default function CommerceTestPage() {
       try {
         const readiness = await runEndpointCheck(CHECKS[0]);
         if (readiness.response.ok) {
-          setConnectReadiness((readiness.body ?? null) as ConnectReadinessPayload | null);
+          setGatewayReadiness((readiness.body ?? null) as GatewayReadinessPayload | null);
         }
 
         const products = await runEndpointCheck(CHECKS[1]);
@@ -338,23 +334,23 @@ export default function CommerceTestPage() {
       </div>
 
       <div className="space-y-2 rounded-lg border p-4 text-sm">
-        <p className="font-medium">Stripe Connect readiness</p>
-        {!connectReadiness && <p className="text-muted-foreground">Unable to load readiness.</p>}
-        {connectReadiness && (
+        <p className="font-medium">Checkout gateway readiness</p>
+        {!gatewayReadiness && <p className="text-muted-foreground">Unable to load readiness.</p>}
+        {gatewayReadiness && (
           <>
-            <p className={connectReadiness.ready ? 'text-emerald-700' : 'text-amber-700'}>
-              {connectReadiness.ready
+            <p className={gatewayReadiness.ready ? 'text-emerald-700' : 'text-amber-700'}>
+              {gatewayReadiness.ready
                 ? 'Ready: checkout + webhook fulfillment can be proved.'
                 : 'Not ready yet: one or more required checks failed.'}
             </p>
             <div className="grid gap-1 text-xs sm:grid-cols-2">
-              {Object.entries(connectReadiness.checks).map(([key, value]) => (
+              {Object.entries(gatewayReadiness.checks).map(([key, value]) => (
                 <p key={key} className={value ? 'text-emerald-700' : 'text-amber-700'}>
                   {value ? 'PASS' : 'FAIL'} {key}
                 </p>
               ))}
             </div>
-            {connectReadiness.notes.map((note, index) => (
+            {gatewayReadiness.notes.map((note, index) => (
               <p key={`readiness-note-${index}`} className="text-muted-foreground">
                 {note}
               </p>

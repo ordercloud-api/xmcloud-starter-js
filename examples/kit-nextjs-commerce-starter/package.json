@@ -27,12 +27,14 @@
     "@sitecore-content-sdk/personalize": "^2.1.0",
     "@sitecore-marketplace-sdk/client": "^0.3.6",
     "axios": "^1.20.0",
+    "jose": "^5.10.0",
     "next": "^16.3.0",
     "next-intl": "^4.9.1",
     "ordercloud-javascript-sdk": "^12.0.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "rsc-env": "0.0.2",
+    "server-only": "^0.0.1",
     "stripe": "^22.5.0"
   },
   "devDependencies": {
