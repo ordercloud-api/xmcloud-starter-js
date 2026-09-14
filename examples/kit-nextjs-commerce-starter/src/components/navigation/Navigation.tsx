@@ -31,10 +31,8 @@ const NavigationItem: React.FC<{ fields: NavigationLinkFields }> = ({ fields }) 
             isOpen ? 'block' : 'hidden'
           }`}
         >
-          {fields.Children!.map((child) => (
-            <li key={child.Id}>
-              <NavigationItem fields={child} />
-            </li>
+          {fields.Children?.map((child) => (
+            <NavigationItem key={child.Id} fields={child} />
           ))}
         </ul>
       )}
