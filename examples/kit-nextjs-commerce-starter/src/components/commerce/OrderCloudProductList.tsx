@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useOrderCloud } from '@/contexts/OrderCloudContext';
-import OrderCloudProductCard, { type OrderCloudProduct } from './OrderCloudProductCard';
+import type { CommerceProduct } from '@/lib/commerce/products/types';
+import OrderCloudProductCard from './OrderCloudProductCard';
 
 type OrderCloudProductListProps = {
   title?: string;
@@ -18,7 +19,7 @@ export default function OrderCloudProductList({
   const { products: productsService, status, error: sessionError } = useOrderCloud();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [products, setProducts] = useState<OrderCloudProduct[]>([]);
+  const [products, setProducts] = useState<CommerceProduct[]>([]);
   const [refreshSeed, setRefreshSeed] = useState(0);
 
   useEffect(() => {
@@ -30,16 +31,23 @@ export default function OrderCloudProductList({
     }
 
     const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    let active = true;
+    let timedOut = false;
+    const timeoutId = window.setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, REQUEST_TIMEOUT_MS);
 
     const loadProducts = async () => {
       setLoading(true);
       try {
         const payload = await productsService.list({ signal: controller.signal });
+        if (!active) return;
         setProducts(payload.items);
         setError(null);
       } catch (loadError) {
-        if (loadError instanceof DOMException && loadError.name === 'AbortError') {
+        if (!active) return;
+        if (controller.signal.aborted && timedOut) {
           setProducts([]);
           setError(
             `Product request timed out after ${Math.floor(REQUEST_TIMEOUT_MS / 1000)}s. Check proxy/auth and try again.`
@@ -47,16 +55,19 @@ export default function OrderCloudProductList({
           return;
         }
 
+        if (controller.signal.aborted) return;
+
         setProducts([]);
         setError(loadError instanceof Error ? loadError.message : 'Failed to load products');
       } finally {
         window.clearTimeout(timeoutId);
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
     void loadProducts();
     return () => {
+      active = false;
       window.clearTimeout(timeoutId);
       controller.abort();
     };

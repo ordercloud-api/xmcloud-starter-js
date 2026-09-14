@@ -90,21 +90,13 @@ const ProductCard: React.FC<{ product: ProductItem }> = ({ product }) => {
   );
 };
 
-export const Default: React.FC<ProductListingProps> = ({ fields }) => {
+export const Default: React.FC<ProductListingProps> = ({ fields, rendering }) => {
+  const hasExplicitDatasource = Boolean(rendering.dataSource?.trim());
   const datasource = fields?.data?.datasource;
   const products = datasource?.products?.targetItems ?? [];
-  const hasDatasourceProducts = products.length > 0;
-  const title = datasource?.title?.jsonValue;
-  const viewAllLink = datasource?.viewAllLink?.jsonValue;
-
-  if (!datasource) {
-    return (
-      <section className="space-y-3 rounded-lg border border-dashed p-4 text-sm text-amber-700" data-component="ProductListing">
-        <p>ProductListing datasource missing.</p>
-        <OrderCloudProductList title="Live OrderCloud products" compact />
-      </section>
-    );
-  }
+  const hasDatasourceProducts = hasExplicitDatasource && products.length > 0;
+  const title = hasExplicitDatasource ? datasource?.title?.jsonValue : undefined;
+  const viewAllLink = hasExplicitDatasource ? datasource?.viewAllLink?.jsonValue : undefined;
 
   return (
     <section className="space-y-4" data-component="ProductListing">
@@ -120,7 +112,9 @@ export const Default: React.FC<ProductListingProps> = ({ fields }) => {
         </div>
       ) : (
         <div className="space-y-2">
-          <p className="text-muted-foreground text-sm">No Sitecore products configured in datasource.</p>
+          {hasExplicitDatasource && (
+            <p className="text-muted-foreground text-sm">No Sitecore products configured in datasource. Showing live products instead.</p>
+          )}
           <OrderCloudProductList title="Live OrderCloud products" compact />
         </div>
       )}

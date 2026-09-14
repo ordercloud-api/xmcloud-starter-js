@@ -1,5 +1,5 @@
 import type { CommerceRequest } from './client';
-import { ProductsService } from './products';
+import { ProductsService } from './products/service';
 import { CartService } from './cart/service';
 
 export interface OrderCloudServices {

@@ -1,3 +1,5 @@
+import type { LineItemSpec } from 'ordercloud-javascript-sdk';
+
 export interface CommerceCartItem {
   id: string;
   productId: string;
@@ -20,6 +22,7 @@ export interface CommerceCart {
 export interface AddCartItemInput {
   productId: string;
   quantity: number;
+  specs?: LineItemSpec[];
 }
 
 export interface UpdateCartItemInput {

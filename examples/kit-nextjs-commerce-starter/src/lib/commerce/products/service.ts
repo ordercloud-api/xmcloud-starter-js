@@ -1,0 +1,109 @@
+import { Me, type Spec } from "ordercloud-javascript-sdk";
+import { getCommerceBrowserConfig } from "../browser-config";
+import type { CommerceRequest } from "../client";
+import { toCommerceProduct } from "./mapper";
+import type {
+  CommerceProduct,
+  CommerceProductList,
+  ListProductsOptions,
+  OrderCloudBuyerProduct,
+  ProductRequestOptions,
+} from "./types";
+import { toCommerceProductSpec, type CommerceProductSpec } from "./specs";
+
+const asPositiveInteger = (value: unknown): number | undefined =>
+  typeof value === "number" && Number.isInteger(value) && value > 0
+    ? value
+    : undefined;
+
+const asNonNegativeInteger = (value: unknown): number | undefined =>
+  typeof value === "number" && Number.isInteger(value) && value >= 0
+    ? value
+    : undefined;
+
+const getMeta = (value: unknown): CommerceProductList["meta"] => {
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    return undefined;
+  const meta = value as Record<string, unknown>;
+
+  return {
+    page: asPositiveInteger(meta.Page),
+    pageSize: asPositiveInteger(meta.PageSize),
+    totalCount: asNonNegativeInteger(meta.TotalCount),
+    totalPages: asNonNegativeInteger(meta.TotalPages),
+  };
+};
+
+export class ProductsService {
+  constructor(private readonly request: CommerceRequest) {}
+
+  async list(options: ListProductsOptions = {}): Promise<CommerceProductList> {
+    const catalogId = getCommerceBrowserConfig().catalogId;
+    const response = await this.request((requestOptions) => {
+      const optionsWithSignal = { ...requestOptions, signal: options.signal };
+      return Me.ListProducts<OrderCloudBuyerProduct>(
+        {
+          catalogID: catalogId,
+          search: options.search?.trim() || undefined,
+          page: options.page,
+          pageSize: options.pageSize,
+        },
+        optionsWithSignal,
+      );
+    });
+
+    return {
+      items: Array.isArray(response.Items)
+        ? response.Items.map(toCommerceProduct).filter(
+            (product): product is CommerceProduct => !!product,
+          )
+        : [],
+      meta: getMeta(response.Meta),
+    };
+  }
+
+  async get(
+    productId: string,
+    options: ProductRequestOptions = {},
+  ): Promise<CommerceProduct> {
+    const normalizedId = productId.trim();
+    if (!normalizedId) throw new Error("OrderCloud product ID is required");
+
+    const response = await this.request((requestOptions) => {
+      const optionsWithSignal = { ...requestOptions, signal: options.signal };
+      return Me.GetProduct<OrderCloudBuyerProduct>(
+        normalizedId,
+        undefined,
+        optionsWithSignal,
+      );
+    });
+    const product = toCommerceProduct(response);
+    if (!product)
+      throw new Error("OrderCloud returned an invalid product response");
+    return product;
+  }
+
+  async listSpecs(
+    productId: string,
+    options: ProductRequestOptions = {},
+  ): Promise<CommerceProductSpec[]> {
+    const normalizedId = productId.trim();
+    if (!normalizedId) throw new Error("OrderCloud product ID is required");
+
+    const response = await this.request((requestOptions) => {
+      const optionsWithSignal = { ...requestOptions, signal: options.signal };
+      return Me.ListSpecs<Spec>(
+        normalizedId,
+        { pageSize: 100 },
+        optionsWithSignal,
+      );
+    });
+
+    return Array.isArray(response.Items)
+      ? response.Items.flatMap((value) => {
+          const spec = toCommerceProductSpec(value);
+          return spec ? [spec] : [];
+        })
+      : [];
+  }
+}

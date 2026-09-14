@@ -1,0 +1,143 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { Me } from 'ordercloud-javascript-sdk';
+import type { CommerceRequest } from '../lib/commerce/client';
+import { ProductsService } from '../lib/commerce/products/service';
+
+const request: CommerceRequest = (operation) => operation({ accessToken: 'test-token' });
+
+const originalCatalogId = process.env.NEXT_PUBLIC_ORDERCLOUD_CATALOG_ID;
+const originalProxyUrl = process.env.NEXT_PUBLIC_ORDERCLOUD_PROXY_URL;
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  if (originalCatalogId === undefined)
+    delete process.env.NEXT_PUBLIC_ORDERCLOUD_CATALOG_ID;
+  else process.env.NEXT_PUBLIC_ORDERCLOUD_CATALOG_ID = originalCatalogId;
+  if (originalProxyUrl === undefined)
+    delete process.env.NEXT_PUBLIC_ORDERCLOUD_PROXY_URL;
+  else process.env.NEXT_PUBLIC_ORDERCLOUD_PROXY_URL = originalProxyUrl;
+});
+
+describe('ProductsService', () => {
+  it('searches the buyer catalog and maps metadata', async () => {
+    process.env.NEXT_PUBLIC_ORDERCLOUD_PROXY_URL =
+      'https://commerce.example.test';
+    process.env.NEXT_PUBLIC_ORDERCLOUD_CATALOG_ID = 'catalog/one';
+    const listProducts = vi.spyOn(Me, 'ListProducts').mockResolvedValue({
+      Items: [{ ID: 'P-1', Name: 'Headphones' }],
+      Meta: { Page: 2, PageSize: 10, TotalCount: 12, TotalPages: 2 },
+    } as never);
+    const service = new ProductsService(request);
+
+    await expect(
+      service.list({ search: 'head phones', page: 2, pageSize: 10 }),
+    ).resolves.toEqual({
+      items: [{ id: 'P-1', name: 'Headphones', images: [] }],
+      meta: { page: 2, pageSize: 10, totalCount: 12, totalPages: 2 },
+    });
+    expect(listProducts).toHaveBeenCalledWith(
+      {
+        catalogID: 'catalog/one',
+        search: 'head phones',
+        page: 2,
+        pageSize: 10,
+      },
+      { accessToken: 'test-token', signal: undefined },
+    );
+  });
+
+  it('retrieves and safely encodes a single product ID', async () => {
+    const getProduct = vi.spyOn(Me, 'GetProduct').mockResolvedValue({
+      ID: 'SKU/123',
+      Name: 'Headphones',
+      PriceSchedule: { Currency: 'USD', PriceBreaks: [{ Price: 19.99 }] },
+    } as never);
+    const service = new ProductsService(request);
+
+    await expect(service.get(' SKU/123 ')).resolves.toEqual({
+      id: 'SKU/123',
+      name: 'Headphones',
+      images: [],
+      price: 19.99,
+      currency: 'USD',
+    });
+    expect(getProduct).toHaveBeenCalledWith(
+      'SKU/123',
+      undefined,
+      { accessToken: 'test-token', signal: undefined },
+    );
+  });
+
+  it('normalizes a primary image and ordered XP gallery images', async () => {
+    vi.spyOn(Me, 'GetProduct').mockResolvedValue({
+      ID: 'SKU-IMAGES',
+      Name: 'Gallery product',
+      ImageUrl: 'https://images.example.test/primary.jpg',
+      xp: {
+        images: [
+          'https://images.example.test/primary.jpg',
+          { url: 'https://images.example.test/detail.jpg', alt: 'Product detail' },
+        ],
+      },
+    } as never);
+    const service = new ProductsService(request);
+
+    await expect(service.get('SKU-IMAGES')).resolves.toMatchObject({
+      imageUrl: 'https://images.example.test/primary.jpg',
+      images: [
+        { url: 'https://images.example.test/primary.jpg' },
+        { url: 'https://images.example.test/detail.jpg', alt: 'Product detail' },
+      ],
+    });
+  });
+
+  it('rejects an empty product ID before making a request', async () => {
+    const getProduct = vi.spyOn(Me, 'GetProduct');
+    const service = new ProductsService(request);
+
+    await expect(service.get(' ')).rejects.toThrow(
+      'OrderCloud product ID is required',
+    );
+    expect(getProduct).not.toHaveBeenCalled();
+  });
+
+  it('loads and maps specs assigned to a product', async () => {
+    const listSpecs = vi.spyOn(Me, 'ListSpecs').mockResolvedValue({
+      Items: [
+        {
+          ID: 'SIZE',
+          Name: 'Size',
+          Required: true,
+          DefinesVariant: true,
+          DefaultOptionID: 'MEDIUM',
+          Options: [
+            { ID: 'SMALL', Value: 'Small' },
+            { ID: 'MEDIUM', Value: 'Medium' },
+          ],
+        },
+      ],
+    } as never);
+    const service = new ProductsService(request);
+
+    await expect(service.listSpecs('SKU/123')).resolves.toEqual([
+      {
+        id: 'SIZE',
+        name: 'Size',
+        required: true,
+        allowOpenText: false,
+        definesVariant: true,
+        defaultOptionId: 'MEDIUM',
+        defaultValue: undefined,
+        options: [
+          { id: 'SMALL', name: 'Small', isOpenText: false },
+          { id: 'MEDIUM', name: 'Medium', isOpenText: false },
+        ],
+      },
+    ]);
+    expect(listSpecs).toHaveBeenCalledWith(
+      'SKU/123',
+      { pageSize: 100 },
+      { accessToken: 'test-token', signal: undefined },
+    );
+  });
+});

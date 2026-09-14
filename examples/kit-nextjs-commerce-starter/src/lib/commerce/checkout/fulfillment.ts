@@ -1,5 +1,12 @@
 import 'server-only';
 import type Stripe from 'stripe';
+import type {
+  AccessToken,
+  LineItem,
+  ListPage,
+  Order,
+  Payment,
+} from 'ordercloud-javascript-sdk';
 import { orderCloudRequest, orderCloudTokenRequest } from '@/lib/commerce/auth/client';
 import { commerceAuthConfig } from '@/lib/commerce/auth/config';
 
@@ -9,11 +16,8 @@ type FulfillmentResult = {
   resumed: boolean;
 };
 
-type OrderCloudList<T> = { Items?: T[] };
-type OrderCloudOrder = { ID?: string; Status?: string };
-type OrderCloudLineItem = { ID?: string; ProductID?: string };
-type OrderCloudPayment = { ID?: string; xp?: { stripeSessionId?: string } };
-type TokenResponse = { access_token: string };
+type FulfillmentOrderXp = { stripeSessionId?: string };
+type FulfillmentPaymentXp = { stripeSessionId?: string };
 
 const resolveProductId = (item: Stripe.LineItem): string => {
   const stripeProduct = item.price?.product;
@@ -37,7 +41,10 @@ const getMiddlewareToken = async (): Promise<string> => {
   params.set('client_secret', commerceAuthConfig.middlewareClientSecret);
   params.set('scope', commerceAuthConfig.middlewareScope);
 
-  const token = await orderCloudTokenRequest<TokenResponse>(params);
+  const token = await orderCloudTokenRequest<AccessToken>(params);
+  if (!token.access_token) {
+    throw new Error('OrderCloud token response did not include an access token');
+  }
   return token.access_token;
 };
 
@@ -46,7 +53,7 @@ export const fulfillConnectedCheckout = async (
 ): Promise<FulfillmentResult> => {
   const token = await getMiddlewareToken();
   const expectedOrderId = `stripe-${session.id.slice(-8)}`;
-  const existing = await orderCloudRequest<OrderCloudList<OrderCloudOrder>>(
+  const existing = await orderCloudRequest<ListPage<Order<FulfillmentOrderXp>>>(
     `/v1/orders/Outgoing?xp.stripeSessionId=${encodeURIComponent(session.id)}`,
     { method: 'GET' },
     token
@@ -58,7 +65,7 @@ export const fulfillConnectedCheckout = async (
   if (order?.ID) {
     resumed = true;
   } else {
-    order = await orderCloudRequest<OrderCloudOrder>(
+    order = await orderCloudRequest<Order<FulfillmentOrderXp>>(
       '/v1/orders/Outgoing',
       {
         method: 'POST',
@@ -82,13 +89,15 @@ export const fulfillConnectedCheckout = async (
     throw new Error('OrderCloud fulfillment did not return an order ID');
   }
 
-  const existingLineItems = await orderCloudRequest<OrderCloudList<OrderCloudLineItem>>(
+  const existingLineItems = await orderCloudRequest<ListPage<LineItem>>(
     `/v1/orders/Outgoing/${encodeURIComponent(orderId)}/lineitems`,
     { method: 'GET' },
     token
   );
   const existingProductIds = new Set(
-    (existingLineItems.Items ?? []).map((item) => item.ProductID).filter(Boolean)
+    (existingLineItems.Items ?? [])
+      .map((item) => item.ProductID)
+      .filter((productId): productId is string => !!productId)
   );
 
   for (const item of session.line_items?.data ?? []) {
@@ -120,7 +129,7 @@ export const fulfillConnectedCheckout = async (
     );
   }
 
-  const payments = await orderCloudRequest<OrderCloudList<OrderCloudPayment>>(
+  const payments = await orderCloudRequest<ListPage<Payment<FulfillmentPaymentXp>>>(
     `/v1/orders/Outgoing/${encodeURIComponent(orderId)}/payments`,
     { method: 'GET' },
     token
@@ -132,7 +141,7 @@ export const fulfillConnectedCheckout = async (
     return { orderId, paymentId: payments.Items?.[0]?.ID || 'existing', resumed: true };
   }
 
-  const payment = await orderCloudRequest<OrderCloudPayment>(
+  const payment = await orderCloudRequest<Payment<FulfillmentPaymentXp>>(
     `/v1/orders/Outgoing/${encodeURIComponent(orderId)}/payments`,
     {
       method: 'POST',

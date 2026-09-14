@@ -10,10 +10,11 @@ import React, {
   useState,
 } from 'react';
 import {
-  CommerceProxyError,
+  configureOrderCloudSdk,
+  hasOrderCloudStatus,
   requestAnonymousOrderCloudToken,
-  requestOrderCloudProxy,
   type CommerceRequest,
+  type CommerceRequestOptions,
 } from '@/lib/commerce/client';
 import {
   clearStoredOrderCloudToken,
@@ -45,8 +46,12 @@ const requestAnonymousOrderCloudTokenWithRetry = async (): Promise<{
       return await requestAnonymousOrderCloudToken();
     } catch (error) {
       const retryDelay = TRANSIENT_AUTH_RETRY_DELAYS_MS[attempt];
+      const status =
+        error && typeof error === 'object' && 'status' in error
+          ? (error as { status?: unknown }).status
+          : undefined;
       const isTransientServerError =
-        error instanceof CommerceProxyError && error.status >= 500 && error.status < 600;
+        typeof status === 'number' && status >= 500 && status < 600;
 
       if (!isTransientServerError || retryDelay === undefined) {
         throw error;
@@ -78,6 +83,7 @@ const asError = (error: unknown): Error =>
   error instanceof Error ? error : new Error('Unable to start an OrderCloud session');
 
 export function OrderCloudProvider({ children }: { children: React.ReactNode }) {
+  configureOrderCloudSdk();
   const [status, setStatus] = useState<OrderCloudAuthStatus>('loading');
   const [error, setError] = useState<Error | null>(null);
   const [storedToken, setStoredToken] = useState<StoredOrderCloudToken | null>(null);
@@ -117,14 +123,14 @@ export function OrderCloudProvider({ children }: { children: React.ReactNode }) 
   }, [setAuthenticated, setAuthenticationError]);
 
   const request = useCallback<CommerceRequest>(
-    async <T,>(path: string, init?: RequestInit): Promise<T> => {
+    async <T,>(operation: (options: CommerceRequestOptions) => Promise<T>): Promise<T> => {
       let token = tokenRef.current ?? (await authenticateAnonymous());
       tokenRef.current = token;
 
       try {
-        return await requestOrderCloudProxy<T>(path, token.accessToken, init);
+        return await operation({ accessToken: token.accessToken });
       } catch (requestError) {
-        if (!(requestError instanceof CommerceProxyError) || requestError.status !== 401) {
+        if (!hasOrderCloudStatus(requestError, 401)) {
           throw requestError;
         }
 
@@ -138,9 +144,9 @@ export function OrderCloudProvider({ children }: { children: React.ReactNode }) 
         }
 
         try {
-          return await requestOrderCloudProxy<T>(path, token.accessToken, init);
+          return await operation({ accessToken: token.accessToken });
         } catch (retryError) {
-          if (retryError instanceof CommerceProxyError && retryError.status === 401) {
+          if (hasOrderCloudStatus(retryError, 401)) {
             throw setAuthenticationError(retryError);
           }
           throw retryError;

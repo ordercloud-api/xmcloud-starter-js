@@ -1,18 +1,9 @@
 'use client';
 
-export type OrderCloudProduct = {
-  id: string;
-  name: string;
-  description?: string;
-  imageUrl?: string;
-  brand?: string;
-  category?: string;
-  price?: number;
-  currency?: string;
-};
+import type { CommerceProduct } from '@/lib/commerce/products/types';
 
 type OrderCloudProductCardProps = {
-  product: OrderCloudProduct;
+  product: CommerceProduct;
   compact?: boolean;
 };
 
