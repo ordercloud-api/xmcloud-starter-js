@@ -9,6 +9,7 @@ import { Form } from '@sitecore-content-sdk/nextjs';
 import * as ProductInfo from 'src/components/product-info/ProductInfo';
 import * as ProductForm from 'src/components/product-form/ProductForm';
 import * as Navigation from 'src/components/navigation/Navigation';
+import * as AddToCart from 'src/components/add-to-cart/AddToCart';
 
 export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['BYOCWrapper', BYOCClientWrapper],
@@ -17,6 +18,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['ProductInfo', { ...ProductInfo }],
   ['ProductForm', { ...ProductForm }],
   ['Navigation', { ...Navigation }],
+  ['AddToCart', { ...AddToCart }],
 ]);
 
 export default componentMap;
