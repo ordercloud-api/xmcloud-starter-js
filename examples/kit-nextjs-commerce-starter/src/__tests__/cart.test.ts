@@ -77,4 +77,27 @@ describe("CartService", () => {
       { accessToken: "test-token" },
     );
   });
+
+  it("marks checkout as pending on the unsubmitted cart", async () => {
+    const request: CommerceRequest = (operation) =>
+      operation({ accessToken: "test-token" });
+    const patch = vi.spyOn(Cart, "Patch").mockResolvedValue({} as never);
+    const service = new CartService(request);
+
+    await service.markCheckoutPending({
+      clientId: "buyer-client-id",
+      stripeSessionId: "cs_test_123",
+    });
+
+    expect(patch).toHaveBeenCalledWith(
+      {
+        xp: {
+          CheckoutStatus: "pending",
+          ocClientId: "buyer-client-id",
+          stripeSessionId: "cs_test_123",
+        },
+      },
+      { accessToken: "test-token" },
+    );
+  });
 });
