@@ -68,3 +68,28 @@ export const buildProductDetailHref = (
   const { pathname, rest } = splitPathAndRest(page);
   return `${joinProductPath(stripWildcardAndTrailingSlash(pathname), id)}${rest}`;
 };
+
+/**
+ * Prefers the author-configured detail page. On the live site, falls back to
+ * the current list route so cards still link when that field is unset.
+ */
+export const resolveProductListDetailPageHref = ({
+  configuredHref,
+  routePath,
+  pathname,
+  isAuthoring = false,
+}: {
+  configuredHref?: string;
+  routePath?: readonly string[];
+  pathname?: string;
+  isAuthoring?: boolean;
+}): string | undefined => {
+  const configured = asNonEmptyString(configuredHref, { trim: true });
+  if (configured) return configured;
+  if (isAuthoring) return undefined;
+
+  const segments = routePath?.filter((segment) => segment.trim().length > 0);
+  if (segments?.length) return `/${segments.join("/")}`;
+
+  return asNonEmptyString(pathname, { trim: true });
+};

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildProductDetailHref } from "../lib/commerce/products/href";
+import {
+  buildProductDetailHref,
+  resolveProductListDetailPageHref,
+} from "../lib/commerce/products/href";
 import { resolveProductId } from "../lib/commerce/products/reference";
 
 describe("buildProductDetailHref", () => {
@@ -73,5 +76,36 @@ describe("buildProductDetailHref", () => {
         isAuthoring: false,
       }),
     ).toBe("SKU/123");
+  });
+});
+
+describe("resolveProductListDetailPageHref", () => {
+  it("prefers the author-configured detail page", () => {
+    expect(
+      resolveProductListDetailPageHref({
+        configuredHref: "/pdp/*",
+        routePath: ["products"],
+        pathname: "/products",
+      }),
+    ).toBe("/pdp/*");
+  });
+
+  it("falls back to the current list route on the live site", () => {
+    expect(
+      resolveProductListDetailPageHref({
+        routePath: ["products"],
+        pathname: "/ignored",
+      }),
+    ).toBe("/products");
+  });
+
+  it("does not invent a href while authoring without a configured page", () => {
+    expect(
+      resolveProductListDetailPageHref({
+        routePath: ["products"],
+        pathname: "/products",
+        isAuthoring: true,
+      }),
+    ).toBeUndefined();
   });
 });

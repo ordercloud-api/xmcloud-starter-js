@@ -1,8 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { useOrderCloud } from '@/contexts/OrderCloudContext';
-import { buildProductDetailHref } from '@/lib/commerce/products/href';
+import { useRoutePath } from '@/contexts/RoutePathContext';
+import {
+  buildProductDetailHref,
+  resolveProductListDetailPageHref,
+} from '@/lib/commerce/products/href';
 import type { CommerceProduct } from '@/lib/commerce/products/types';
 import OrderCloudProductCard from './OrderCloudProductCard';
 
@@ -22,6 +27,14 @@ export default function OrderCloudProductList({
   isAuthoring = false,
 }: OrderCloudProductListProps) {
   const { products: productsService, status, error: sessionError } = useOrderCloud();
+  const routePath = useRoutePath();
+  const pathname = usePathname();
+  const resolvedDetailPageHref = resolveProductListDetailPageHref({
+    configuredHref: detailPageHref,
+    routePath,
+    pathname,
+    isAuthoring,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [products, setProducts] = useState<CommerceProduct[]>([]);
@@ -97,7 +110,7 @@ export default function OrderCloudProductList({
 
       {loading && <p className="text-muted-foreground">Loading product data...</p>}
       {!loading && error && <p className="text-red-700">{error}</p>}
-      {isAuthoring && !detailPageHref && (
+      {isAuthoring && !resolvedDetailPageHref && (
         <p className="rounded border border-dashed border-amber-500 p-3 text-sm text-amber-700">
           Configure Detail Page so product cards can link to the product detail page.
         </p>
@@ -114,7 +127,7 @@ export default function OrderCloudProductList({
               key={product.id ? `${product.id}-${index}` : `product-${index}`}
               product={product}
               compact={compact}
-              href={buildProductDetailHref(detailPageHref, product.id)}
+              href={buildProductDetailHref(resolvedDetailPageHref, product.id)}
             />
           ))}
         </div>
