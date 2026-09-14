@@ -55,4 +55,22 @@ describe("checkout Stripe vault", () => {
       'Missing required checkout configuration: CHECKOUT_STRIPE_VAULT_JSON["other-client"]',
     );
   });
+
+  it("matches vault keys to JWT cid without regard to GUID casing", () => {
+    process.env.CHECKOUT_STRIPE_VAULT_JSON = JSON.stringify({
+      "D264548E-27EE-4784-BE83-E52EA20C8688": {
+        api_key: "sk_test_123",
+        webhook_signing_secret: "whsec_123",
+        return_url: "http://localhost:3000/checkout/success",
+      },
+    });
+
+    expect(
+      getStripeCredentialsForClientId("d264548e-27ee-4784-be83-e52ea20c8688"),
+    ).toEqual({
+      apiKey: "sk_test_123",
+      webhookSigningSecret: "whsec_123",
+      returnUrl: "http://localhost:3000/checkout/success",
+    });
+  });
 });

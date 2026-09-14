@@ -61,7 +61,7 @@ export const parseStripeVault = (
       if (!trimmedClientId) {
         throw new Error(`Invalid ${VAULT_ENV_NAME}: client id keys must be non-empty`);
       }
-      return [trimmedClientId, toCredentials(trimmedClientId, value)];
+      return [trimmedClientId.toLowerCase(), toCredentials(trimmedClientId, value)];
     }),
   );
 };
@@ -69,7 +69,7 @@ export const parseStripeVault = (
 export const getStripeCredentialsForClientId = (
   clientId: string,
 ): StripeClientCredentials => {
-  const normalizedClientId = clientId.trim();
+  const normalizedClientId = clientId.trim().toLowerCase();
   if (!normalizedClientId) {
     throw new Error("OrderCloud API client id is required");
   }
