@@ -7,6 +7,10 @@ import type {
   CommerceProductList,
 } from '@/lib/commerce/products/types';
 import {
+  parseProductReferenceList,
+  serializeProductReferenceList,
+} from '@/lib/commerce/products/list-source';
+import {
   parseProductReference,
   serializeProductReference,
   type ProductReference,
@@ -20,6 +24,13 @@ const asErrorMessage = (value: unknown): string => {
   return 'Unable to load OrderCloud products';
 };
 
+const isMultiplePickerSearch = (search: string): boolean => {
+  const value = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search).get(
+    'multiple',
+  );
+  return value === '1' || value === 'true';
+};
+
 export default function OrderCloudProductPickerPage() {
   const {
     client,
@@ -28,17 +39,29 @@ export default function OrderCloudProductPickerPage() {
   } = useMarketplaceClient();
   const [query, setQuery] = useState('');
   const [products, setProducts] = useState<CommerceProduct[]>([]);
-  const [selected, setSelected] = useState<ProductReference | undefined>();
+  const [selected, setSelected] = useState<ProductReference[]>([]);
+  const [isMultiple, setIsMultiple] = useState(false);
+  const [modeReady, setModeReady] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [productError, setProductError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!client) return;
-    void client
-      .getValue()
-      .then((value: unknown) => setSelected(parseProductReference(value)));
-  }, [client]);
+    setIsMultiple(isMultiplePickerSearch(window.location.search));
+    setModeReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!client || !modeReady) return;
+    void client.getValue().then((value: unknown) => {
+      if (isMultiple) {
+        setSelected(parseProductReferenceList(value));
+        return;
+      }
+      const parsed = parseProductReference(value);
+      setSelected(parsed ? [parsed] : []);
+    });
+  }, [client, isMultiple, modeReady]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -81,10 +104,16 @@ export default function OrderCloudProductPickerPage() {
   }, [query]);
 
   const save = async () => {
-    if (!client || !selected) return;
+    const selectedProduct = selected[0];
+    if (!client || !selectedProduct) return;
     setSaving(true);
     try {
-      await client.setValue(serializeProductReference(selected), true);
+      await client.setValue(
+        isMultiple
+          ? serializeProductReferenceList(selected)
+          : serializeProductReference(selectedProduct),
+        true,
+      );
       await client.closeApp();
     } finally {
       setSaving(false);
@@ -102,13 +131,41 @@ export default function OrderCloudProductPickerPage() {
     }
   };
 
+  const selectProduct = (product: ProductReference) => {
+    if (!isMultiple) {
+      setSelected([product]);
+      return;
+    }
+
+    setSelected((current) => {
+      if (current.some((item) => item.id === product.id)) {
+        return current.filter((item) => item.id !== product.id);
+      }
+      return [...current, product];
+    });
+  };
+
+  const selectedSummary = isMultiple
+    ? `${selected.length} selected`
+    : selected[0]?.name ?? selected[0]?.id;
+
+  if (!modeReady) {
+    return (
+      <main className="mx-auto min-h-screen max-w-3xl space-y-5 bg-white p-6 text-slate-950">
+        <p className="text-sm text-slate-600">Loading picker…</p>
+      </main>
+    );
+  }
+
   return (
     <main className="mx-auto min-h-screen max-w-3xl space-y-5 bg-white p-6 text-slate-950">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold">Select an OrderCloud product</h1>
+        <h1 className="text-2xl font-semibold">
+          {isMultiple ? 'Select OrderCloud products' : 'Select an OrderCloud product'}
+        </h1>
         <p className="text-sm text-slate-600">
-          Search the buyer catalog, select a product, and save its stable
-          OrderCloud ID.
+          Search the buyer catalog, select {isMultiple ? 'products' : 'a product'}, and save{' '}
+          {isMultiple ? 'their stable OrderCloud IDs.' : 'its stable OrderCloud ID.'}
         </p>
       </header>
 
@@ -146,7 +203,7 @@ export default function OrderCloudProductPickerPage() {
             <p className="text-sm text-slate-600">No products found.</p>
           )}
           {products.map((product) => {
-            const isSelected = selected?.id === product.id;
+            const isSelected = selected.some((item) => item.id === product.id);
             return (
               <label
                 key={product.id}
@@ -155,11 +212,11 @@ export default function OrderCloudProductPickerPage() {
                 }`}
               >
                 <input
-                  type="radio"
+                  type={isMultiple ? 'checkbox' : 'radio'}
                   name="product"
                   checked={isSelected}
                   onChange={() =>
-                    setSelected({ id: product.id, name: product.name })
+                    selectProduct({ id: product.id, name: product.name })
                   }
                   className="mt-1"
                 />
@@ -199,18 +256,18 @@ export default function OrderCloudProductPickerPage() {
           Clear
         </button>
         <div className="flex items-center gap-3">
-          {selected && (
+          {selected.length > 0 && (
             <span className="max-w-64 truncate text-sm text-slate-600">
-              {selected.name ?? selected.id}
+              {selectedSummary}
             </span>
           )}
           <button
             type="button"
             onClick={() => void save()}
-            disabled={!client || !selected || saving || isMarketplaceLoading}
+            disabled={!client || selected.length === 0 || saving || isMarketplaceLoading}
             className="rounded bg-blue-700 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
-            {saving ? 'Saving…' : 'Save product'}
+            {saving ? 'Saving…' : isMultiple ? 'Save products' : 'Save product'}
           </button>
         </div>
       </footer>
