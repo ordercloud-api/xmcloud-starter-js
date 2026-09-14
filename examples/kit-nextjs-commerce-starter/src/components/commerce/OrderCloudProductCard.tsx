@@ -29,20 +29,22 @@ export default function OrderCloudProductCard({
 }: OrderCloudProductCardProps) {
   const content = (
     <>
-      {product.imageUrl && (
-        <img
-          src={product.imageUrl}
-          alt={product.name}
-          className={compact ? 'h-24 w-full rounded object-cover' : 'h-32 w-full rounded object-cover'}
-          loading="lazy"
-        />
-      )}
+      <div className="aspect-square overflow-hidden rounded bg-slate-100">
+        {product.imageUrl && (
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
+        )}
+      </div>
 
-      <div className="space-y-1">
-        <p className="font-medium leading-tight">{product.name}</p>
-        <p className="text-muted-foreground text-xs">ID: {product.id}</p>
+      <div className="space-y-0.5">
+        <p className="line-clamp-2 text-sm font-medium leading-tight">{product.name}</p>
+        {!compact && <p className="text-muted-foreground text-xs">ID: {product.id}</p>}
         {(product.brand || product.category) && (
-          <p className="text-muted-foreground text-xs">
+          <p className="text-muted-foreground line-clamp-1 text-xs">
             {[product.brand, product.category].filter(Boolean).join(' · ')}
           </p>
         )}
@@ -54,7 +56,7 @@ export default function OrderCloudProductCard({
     </>
   );
 
-  const className = 'space-y-2 rounded-md border p-3';
+  const className = compact ? 'space-y-2 rounded-md border p-2' : 'space-y-2 rounded-md border p-3';
 
   if (href) {
     return (
