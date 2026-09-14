@@ -27,12 +27,13 @@ export default function OrderCloudProductCard({
   compact = false,
   href,
 }: OrderCloudProductCardProps) {
+  const imageUrl = product.thumbnailUrl ?? product.imageUrl;
   const content = (
     <>
       <div className="aspect-square overflow-hidden rounded bg-slate-100">
-        {product.imageUrl && (
+        {imageUrl && (
           <img
-            src={product.imageUrl}
+            src={imageUrl}
             alt={product.name}
             className="h-full w-full object-cover"
             loading="lazy"

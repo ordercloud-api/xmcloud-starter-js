@@ -220,9 +220,9 @@ export default function OrderCloudProductPickerPage() {
                   }
                   className="mt-1"
                 />
-                {product.imageUrl && (
+                {(product.thumbnailUrl ?? product.imageUrl) && (
                   <img
-                    src={product.imageUrl}
+                    src={product.thumbnailUrl ?? product.imageUrl}
                     alt=""
                     className="h-14 w-14 rounded object-cover"
                   />

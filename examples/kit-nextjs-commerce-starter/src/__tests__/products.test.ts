@@ -68,15 +68,21 @@ describe('ProductsService', () => {
     );
   });
 
-  it('normalizes a primary image and ordered XP gallery images', async () => {
+  it('maps the updated XP schema and moves the primary image first', async () => {
     vi.spyOn(Me, 'GetProduct').mockResolvedValue({
       ID: 'SKU-IMAGES',
       Name: 'Gallery product',
-      ImageUrl: 'https://images.example.test/primary.jpg',
       xp: {
-        images: [
-          'https://images.example.test/primary.jpg',
-          { url: 'https://images.example.test/detail.jpg', alt: 'Product detail' },
+        Brand: 'Jordan',
+        Category: 'Basketball Lifestyle',
+        Price: 189.99,
+        Images: [
+          { Url: 'https://images.example.test/detail.jpg' },
+          {
+            Url: 'https://images.example.test/primary.jpg',
+            Thumbnailurl: 'https://images.example.test/primary-thumb.jpg',
+            Primary: true,
+          },
         ],
       },
     } as never);
@@ -84,9 +90,39 @@ describe('ProductsService', () => {
 
     await expect(service.get('SKU-IMAGES')).resolves.toMatchObject({
       imageUrl: 'https://images.example.test/primary.jpg',
+      thumbnailUrl: 'https://images.example.test/primary-thumb.jpg',
+      brand: 'Jordan',
+      category: 'Basketball Lifestyle',
+      price: 189.99,
       images: [
-        { url: 'https://images.example.test/primary.jpg' },
-        { url: 'https://images.example.test/detail.jpg', alt: 'Product detail' },
+        {
+          url: 'https://images.example.test/primary.jpg',
+          thumbnailUrl: 'https://images.example.test/primary-thumb.jpg',
+        },
+        { url: 'https://images.example.test/detail.jpg' },
+      ],
+    });
+  });
+
+  it('uses the first product image when no primary image is provided', async () => {
+    vi.spyOn(Me, 'GetProduct').mockResolvedValue({
+      ID: 'SKU-NO-PRIMARY',
+      Name: 'Gallery product',
+      xp: {
+        Images: [
+          { Url: 'https://images.example.test/first.jpg' },
+          { Url: 'https://images.example.test/second.jpg' },
+        ],
+      },
+    } as never);
+    const service = new ProductsService(request);
+
+    await expect(service.get('SKU-NO-PRIMARY')).resolves.toMatchObject({
+      imageUrl: 'https://images.example.test/first.jpg',
+      thumbnailUrl: 'https://images.example.test/first.jpg',
+      images: [
+        { url: 'https://images.example.test/first.jpg' },
+        { url: 'https://images.example.test/second.jpg' },
       ],
     });
   });

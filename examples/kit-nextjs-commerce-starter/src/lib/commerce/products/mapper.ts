@@ -5,50 +5,43 @@ import type {
 } from "./types";
 import { asFiniteNumber, asNonEmptyString, asRecord } from "../normalization";
 
-const toProductImage = (value: unknown): CommerceProductImage | undefined => {
-  const stringUrl = asNonEmptyString(value);
-  if (stringUrl) return { url: stringUrl };
+type MappedProductImage = CommerceProductImage & { primary: boolean };
 
+const toProductImage = (value: unknown): MappedProductImage | undefined => {
   const image = asRecord(value);
-  const url =
-    asNonEmptyString(image?.url) ??
-    asNonEmptyString(image?.Url) ??
-    asNonEmptyString(image?.imageUrl) ??
-    asNonEmptyString(image?.ImageUrl);
+  const url = asNonEmptyString(image?.Url);
   if (!url) return undefined;
 
   return {
     url,
-    alt:
-      asNonEmptyString(image?.alt) ??
-      asNonEmptyString(image?.Alt) ??
-      asNonEmptyString(image?.altText) ??
-      asNonEmptyString(image?.AltText),
+    thumbnailUrl: asNonEmptyString(image?.Thumbnailurl),
+    primary: image?.Primary === true,
   };
 };
 
 const getImages = (
-  product: OrderCloudBuyerProduct,
   xp: Record<string, unknown> | undefined,
 ): CommerceProductImage[] => {
-  const primaryImage =
-    toProductImage(product.ImageUrl) ??
-    toProductImage(xp?.imageUrl ?? xp?.ImageUrl);
-  const galleryValue = xp?.images ?? xp?.Images;
-  const galleryImages = Array.isArray(galleryValue)
-    ? galleryValue.flatMap((value) => {
+  const images = Array.isArray(xp?.Images)
+    ? xp.Images.flatMap((value) => {
         const image = toProductImage(value);
         return image ? [image] : [];
       })
     : [];
-  const images = primaryImage
-    ? [primaryImage, ...galleryImages]
-    : galleryImages;
-
-  return images.filter(
+  const uniqueImages = images.filter(
     (image, index) =>
       images.findIndex((candidate) => candidate.url === image.url) === index,
   );
+  const primaryIndex = uniqueImages.findIndex((image) => image.primary);
+  const orderedImages =
+    primaryIndex > 0
+      ? [
+          uniqueImages[primaryIndex],
+          ...uniqueImages.filter((_, index) => index !== primaryIndex),
+        ]
+      : uniqueImages;
+
+  return orderedImages.map(({ primary: _primary, ...image }) => image);
 };
 
 const getPrice = (value: unknown): { price?: number; currency?: string } => {
@@ -74,18 +67,19 @@ export const toCommerceProduct = (
 
   const xp = asRecord(product.xp);
   const price = getPrice(product.PriceSchedule ?? product.DefaultPriceSchedule);
-  const images = getImages(product, xp);
+  const images = getImages(xp);
 
   return {
     id,
     name,
     description: asNonEmptyString(product.Description),
     imageUrl: images[0]?.url,
+    thumbnailUrl: images[0]?.thumbnailUrl ?? images[0]?.url,
     images,
-    brand: asNonEmptyString(xp?.brand),
-    category: asNonEmptyString(xp?.category),
+    brand: asNonEmptyString(xp?.Brand),
+    category: asNonEmptyString(xp?.Category),
     price:
-      price.price ?? asFiniteNumber(xp?.price, { allowNumericString: true }),
+      price.price ?? asFiniteNumber(xp?.Price, { allowNumericString: true }),
     currency: price.currency,
   };
 };
