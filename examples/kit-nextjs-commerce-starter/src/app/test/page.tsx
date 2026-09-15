@@ -374,6 +374,9 @@ export default function CommerceTestPage() {
       </OrderCloudProvider>
 
       <div className="grid gap-3 sm:grid-cols-2">
+        <Link className="rounded-lg border px-4 py-3 text-sm font-medium hover:bg-muted/60" href="/cart">
+          Open /cart
+        </Link>
         <Link className="rounded-lg border px-4 py-3 text-sm font-medium hover:bg-muted/60" href="/">
           Back to diagnostics home
         </Link>

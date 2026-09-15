@@ -101,8 +101,8 @@ function CheckoutSuccessContent() {
           </div>
         </dl>
       )}
-      <Link href="/test" className="text-sm underline">
-        Back to diagnostics
+      <Link href="/cart" className="text-sm underline">
+        Back to cart
       </Link>
     </main>
   );

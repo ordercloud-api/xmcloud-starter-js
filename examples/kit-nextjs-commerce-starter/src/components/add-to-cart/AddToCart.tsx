@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import type React from "react";
+import Link from "next/link";
 import type { ComponentProps } from "@/lib/component-props";
 import { useOrderCloud } from "@/contexts/OrderCloudContext";
 import { useProductContext } from "@/contexts/ProductDataContext";
@@ -179,6 +180,14 @@ export const Default: React.FC<ComponentProps> = ({ params, page }) => {
           role={submissionStatus === "error" ? "alert" : "status"}
         >
           {submissionMessage}
+          {submissionStatus === "added" && (
+            <>
+              {" "}
+              <Link href="/cart" className="font-semibold underline">
+                View cart
+              </Link>
+            </>
+          )}
         </p>
       )}
     </form>

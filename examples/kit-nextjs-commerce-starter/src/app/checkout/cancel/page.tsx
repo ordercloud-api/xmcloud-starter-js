@@ -7,8 +7,8 @@ export default function CheckoutCancelPage() {
       <p className="text-muted-foreground text-sm">
         No payment was taken. Your cart is still available.
       </p>
-      <Link href="/" className="text-sm underline">
-        Back to catalog
+      <Link href="/cart" className="text-sm underline">
+        Back to cart
       </Link>
     </main>
   );
