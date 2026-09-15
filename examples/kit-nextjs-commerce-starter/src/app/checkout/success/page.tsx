@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { readStoredOrderCloudToken } from '@/lib/commerce/auth/token-store';
+import { getCheckoutGatewayUrl } from '@/lib/commerce/checkout/gateway-url';
 import {
   CHECKOUT_ORDER_ID_STORAGE_KEY,
   type GatewayCheckoutStatus,
@@ -38,7 +39,7 @@ function CheckoutSuccessContent() {
         if (!orderId) throw new Error('Missing checkout order id. Start checkout from the cart again.');
 
         const response = await fetch(
-          `/api/commerce/stripe/status?orderId=${encodeURIComponent(orderId)}`,
+          getCheckoutGatewayUrl(`/stripe/status?orderId=${encodeURIComponent(orderId)}`),
           {
             cache: 'no-store',
             headers: { Authorization: `Bearer ${token}` },

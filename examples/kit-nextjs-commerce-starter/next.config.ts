@@ -77,6 +77,21 @@ const nextConfig: NextConfig = {
         destination: '/api/well-known/ai-txt',
         locale: false,
       },
+      {
+        source: '/stripe/checkout',
+        destination: '/api/commerce/stripe/checkout',
+        locale: false,
+      },
+      {
+        source: '/stripe/complete',
+        destination: '/api/commerce/stripe/complete',
+        locale: false,
+      },
+      {
+        source: '/stripe/status',
+        destination: '/api/commerce/stripe/status',
+        locale: false,
+      },
     ];
   },
 };
