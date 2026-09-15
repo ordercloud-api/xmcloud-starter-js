@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Me } from "ordercloud-javascript-sdk";
-import { readOrderCloudClientId } from "@/lib/commerce/auth/shopper-jwt";
 import { readBearerToken } from "@/lib/commerce/auth/bearer-token";
-import {
-  configureOrderCloudSdk,
-  hasOrderCloudStatus,
-} from "@/lib/commerce/client";
+import { JwtVerificationError, verifyOrderCloudJwt } from "@/lib/commerce/auth/verify-jwt";
 import { getCart, markCartCheckoutPending } from "@/lib/commerce/cart/service";
 import { createHostedCheckoutSession } from "@/lib/commerce/checkout/session";
 import { getStripeCredentialsForClientId } from "@/lib/commerce/checkout/vault";
@@ -23,25 +18,8 @@ const getErrorStatus = (message: string): number => {
     return 400;
   }
   if (message.startsWith("Missing required checkout configuration")) return 503;
-  if (
-    message === "Invalid OrderCloud access token" ||
-    message === "OrderCloud access token is missing cid"
-  ) {
-    return 401;
-  }
+  if (message === "OrderCloud access token is missing cid") return 401;
   return 502;
-};
-
-const verifyShopperToken = async (shopperToken: string): Promise<void> => {
-  configureOrderCloudSdk();
-  try {
-    await Me.Get({ accessToken: shopperToken });
-  } catch (error) {
-    if (hasOrderCloudStatus(error, 401) || hasOrderCloudStatus(error, 403)) {
-      throw new Error("Authentication required");
-    }
-    throw error;
-  }
 };
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -55,15 +33,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    await verifyShopperToken(shopperToken);
-    const clientId = readOrderCloudClientId(shopperToken);
+    const payload = await verifyOrderCloudJwt(shopperToken);
+    const clientId = typeof payload.cid === "string" ? payload.cid.trim() : "";
+    if (!clientId) {
+      throw new Error("OrderCloud access token is missing cid");
+    }
+
     const credentials = getStripeCredentialsForClientId(clientId);
     const cart = await getCart(shopperToken);
-    const checkout = await createHostedCheckoutSession(
-      cart,
-      credentials,
-      clientId,
-    );
+    const checkout = await createHostedCheckoutSession(cart, credentials, clientId);
     await markCartCheckoutPending(shopperToken, {
       clientId,
       stripeSessionId: checkout.sessionId,
@@ -76,8 +54,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       { status: 201 },
     );
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unable to start checkout";
+    if (error instanceof JwtVerificationError) {
+      return NextResponse.json({ error: error.message }, { status: 401 });
+    }
+    const message = error instanceof Error ? error.message : "Unable to start checkout";
     return NextResponse.json({ error: message }, { status: getErrorStatus(message) });
   }
 }
