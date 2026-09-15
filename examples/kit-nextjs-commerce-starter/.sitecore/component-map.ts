@@ -7,11 +7,11 @@ import { Form } from '@sitecore-content-sdk/nextjs';
 
 // end of built-in import section
 import * as Title from 'src/components/title/Title';
+import * as SpecForm from 'src/components/spec-form/SpecForm';
 import * as RichText from 'src/components/rich-text/RichText';
 import * as Promo from 'src/components/promo/Promo';
 import * as ProductListing from 'src/components/product-listing/ProductListing';
 import * as ProductInfo from 'src/components/product-info/ProductInfo';
-import * as ProductForm from 'src/components/product-form/ProductForm';
 import * as ProductContainer from 'src/components/product-container/ProductContainer';
 import * as PartialDesignDynamicPlaceholder from 'src/components/partial-design-dynamic-placeholder/PartialDesignDynamicPlaceholder';
 import * as PageContent from 'src/components/page-content/PageContent';
@@ -25,11 +25,11 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['FEaaSWrapper', FEaaSServerWrapper],
   ['Form', { ...Form, componentType: 'client' }],
   ['Title', { ...Title }],
+  ['SpecForm', { ...SpecForm, componentType: 'client' }],
   ['RichText', { ...RichText }],
   ['Promo', { ...Promo }],
   ['ProductListing', { ...ProductListing }],
   ['ProductInfo', { ...ProductInfo, componentType: 'client' }],
-  ['ProductForm', { ...ProductForm, componentType: 'client' }],
   ['ProductContainer', { ...ProductContainer }],
   ['PartialDesignDynamicPlaceholder', { ...PartialDesignDynamicPlaceholder }],
   ['PageContent', { ...PageContent }],

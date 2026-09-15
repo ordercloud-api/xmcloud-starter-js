@@ -25,4 +25,5 @@ Open **http://localhost:3000**.
 ## Documentation
 
 - [Skills: capability map for this starter](Skills.md) — High-level capability groupings; see also the repo [docs/Skills.md](../../docs/Skills.md).
+- [SpecForm presentation XP](docs/spec-form.md) — Base controls, optional XP renderers, validation, and option metadata.
 - [Sitecore Content SDK for XM Cloud](https://doc.sitecore.com/xmc/en/developers/content-sdk/sitecore-content-sdk-for-xm-cloud.html)
