@@ -2,12 +2,6 @@
   "name": "kit-nextjs-commerce-starter",
   "version": "1.0.0",
   "private": true,
-  "config": {
-    "appName": "kit-nextjs-commerce-starter",
-    "graphQLEndpointPath": "/sitecore/api/graph/edge",
-    "language": "en",
-    "template": "nextjs"
-  },
   "author": {
     "name": "Sitecore Corporation",
     "url": "https://doc.sitecore.com/xmc/en/developers/content-sdk/index.html"
@@ -72,7 +66,7 @@
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "type-check": "tsc --noEmit --incremental false",
     "next:build": "next build",
-    "next:dev": "cross-env NODE_OPTIONS='--inspect' next dev",
+    "next:dev": "next dev",
     "next:start": "next start",
     "sitecore-tools:generate-map": "sitecore-tools project component generate-map",
     "sitecore-tools:generate-map:watch": "sitecore-tools project component generate-map --watch",
