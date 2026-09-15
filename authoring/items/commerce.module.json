@@ -1,0 +1,24 @@
+{
+    "$schema": "../../.sitecore/schemas/ModuleFile.schema.json",
+    "namespace": "commerce",
+    "items": {
+        "path": "commerce",
+        "includes": [
+            {
+                "name": "CommerceTemplates",
+                "path": "/sitecore/templates/Project/commerce",
+                "scope": "itemAndDescendants"
+            },
+            {
+                "name": "CommerceRenderings",
+                "path": "/sitecore/layout/Renderings/Project/commerce",
+                "scope": "itemAndDescendants"
+            },
+            {
+                "name": "CommercePlaceholderSettings",
+                "path": "/sitecore/layout/Placeholder Settings/Project/commerce",
+                "scope": "itemAndDescendants"
+            }
+        ]
+    }
+}
