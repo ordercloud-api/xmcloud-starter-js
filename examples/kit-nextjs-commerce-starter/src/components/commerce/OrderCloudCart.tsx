@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useOrderCloud } from '@/contexts/OrderCloudContext';
 import type { CommerceCart } from '@/lib/commerce/cart/types';
+import { CHECKOUT_ORDER_ID_STORAGE_KEY } from '@/lib/commerce/checkout/status';
 
 const formatMoney = (amount?: number, currency?: string): string => {
   if (typeof amount !== 'number' || !Number.isFinite(amount)) return '—';
@@ -88,6 +89,10 @@ export default function OrderCloudCart() {
       }
 
       setCheckout(result);
+      if (result.orderId) {
+        sessionStorage.setItem(CHECKOUT_ORDER_ID_STORAGE_KEY, result.orderId);
+      }
+      window.location.assign(result.redirectUrl);
     } catch (checkoutStartError) {
       setCheckoutError(
         checkoutStartError instanceof Error ? checkoutStartError.message : 'Checkout failed'
