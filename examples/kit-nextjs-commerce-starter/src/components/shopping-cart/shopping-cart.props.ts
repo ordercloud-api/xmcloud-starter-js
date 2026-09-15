@@ -1,3 +1,3 @@
 import type { ComponentProps } from '@/lib/component-props';
 
-export type CartProps = ComponentProps;
+export type ShoppingCartProps = ComponentProps;

@@ -8,6 +8,7 @@ import { Form } from '@sitecore-content-sdk/nextjs';
 // end of built-in import section
 import * as Title from 'src/components/title/Title';
 import * as SpecForm from 'src/components/spec-form/SpecForm';
+import * as ShoppingCart from 'src/components/shopping-cart/ShoppingCart';
 import * as RichText from 'src/components/rich-text/RichText';
 import * as Promo from 'src/components/promo/Promo';
 import * as ProductListing from 'src/components/product-listing/ProductListing';
@@ -18,7 +19,6 @@ import * as PageContent from 'src/components/page-content/PageContent';
 import * as Navigation from 'src/components/navigation/Navigation';
 import * as Image from 'src/components/image/Image';
 import * as Container from 'src/components/container/Container';
-import * as Cart from 'src/components/cart/Cart';
 import * as AddToCart from 'src/components/add-to-cart/AddToCart';
 
 export const componentMap = new Map<string, NextjsContentSdkComponent>([
@@ -27,6 +27,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['Form', { ...Form, componentType: 'client' }],
   ['Title', { ...Title }],
   ['SpecForm', { ...SpecForm, componentType: 'client' }],
+  ['ShoppingCart', { ...ShoppingCart, componentType: 'client' }],
   ['RichText', { ...RichText }],
   ['Promo', { ...Promo }],
   ['ProductListing', { ...ProductListing }],
@@ -37,7 +38,6 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['Navigation', { ...Navigation, componentType: 'client' }],
   ['Image', { ...Image }],
   ['Container', { ...Container }],
-  ['Cart', { ...Cart, componentType: 'client' }],
   ['AddToCart', { ...AddToCart, componentType: 'client' }],
 ]);
 

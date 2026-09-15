@@ -16,17 +16,6 @@ export const flattenNavigationItems = (
 export const isFlatNavigation = (flattened?: string): boolean =>
   flattened === "1";
 
-const isCartHref = (href?: string): boolean =>
-  (href?.split("?")[0] || "") === "/cart";
-
-export const navigationIncludesCart = (
-  items: NavigationLinkFields[],
-): boolean =>
-  items.some(
-    (item) =>
-      isCartHref(item.Href) || navigationIncludesCart(item.Children ?? []),
-  );
-
 /**
  * Treat the last authored link as utility chrome (Cart) so Home/Products stay left.
  * Labels and hrefs still come from Sitecore; this is layout only.

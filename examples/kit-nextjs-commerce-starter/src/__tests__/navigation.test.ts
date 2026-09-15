@@ -4,7 +4,6 @@ import {
   flattenNavigationItems,
   getNavigationItems,
   isFlatNavigation,
-  navigationIncludesCart,
   splitPrimaryAndUtilityItems,
 } from "../components/navigation/navigation.utils";
 
@@ -78,17 +77,5 @@ describe("splitPrimaryAndUtilityItems", () => {
       "Products",
     ]);
     expect(utility?.DisplayName).toBe("Cart");
-  });
-});
-
-describe("navigationIncludesCart", () => {
-  it("finds a Cart href on a top-level or nested link", () => {
-    expect(navigationIncludesCart([link("1", "Home", "/")])).toBe(false);
-    expect(navigationIncludesCart([link("3", "Cart", "/cart")])).toBe(true);
-    expect(
-      navigationIncludesCart([
-        { ...link("1", "Home", "/"), Children: [link("3", "Bag", "/cart")] },
-      ]),
-    ).toBe(true);
   });
 });

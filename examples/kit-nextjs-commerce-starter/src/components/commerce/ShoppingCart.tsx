@@ -2,12 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useSitecore } from '@sitecore-content-sdk/nextjs';
 import { useOrderCloud } from '@/contexts/OrderCloudContext';
 import type { CommerceCart } from '@/lib/commerce/cart/types';
 import { startHostedCheckout } from '@/lib/commerce/checkout/hosted';
 import { CHECKOUT_ORDER_ID_STORAGE_KEY } from '@/lib/commerce/checkout/status';
-import type { CartProps } from './cart.props';
 
 const formatMoney = (amount?: number, currency?: string): string => {
   if (typeof amount !== 'number' || !Number.isFinite(amount)) return '—';
@@ -27,7 +25,7 @@ const lineTotal = (quantity: number, unitPrice?: number): number | undefined => 
   return quantity * unitPrice;
 };
 
-export const CartPanel: React.FC = () => {
+export default function ShoppingCart() {
   const { accessToken, cart, status, error: sessionError } = useOrderCloud();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -125,7 +123,7 @@ export const CartPanel: React.FC = () => {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Cart</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Shopping Cart</h1>
         {!loading && payload && payload.items.length > 0 && (
           <p className="text-muted-foreground mt-1 text-sm">
             {itemCount} {itemCount === 1 ? 'item' : 'items'}
@@ -138,7 +136,7 @@ export const CartPanel: React.FC = () => {
 
       {!loading && !error && payload && payload.items.length === 0 && (
         <div className="space-y-3 rounded-lg border px-5 py-8">
-          <p className="font-medium">Your cart is empty</p>
+          <p className="font-medium">Your shopping cart is empty</p>
           <p className="text-muted-foreground text-sm">Add a product, then come back here to check out.</p>
           <Link href="/products" className="text-sm font-semibold underline">
             Continue shopping
@@ -234,25 +232,4 @@ export const CartPanel: React.FC = () => {
       )}
     </div>
   );
-};
-
-export const Default: React.FC<CartProps> = ({ params }) => {
-  const { page } = useSitecore();
-  const isAuthoring = page.mode.isEditing || page.mode.isDesignLibrary;
-
-  return (
-    <section
-      className={`component cart px-4 py-10 ${params.styles ?? ''}`}
-      id={params.RenderingIdentifier}
-      data-component="Cart"
-      data-class-change
-    >
-      {isAuthoring && (
-        <p className="text-muted-foreground mb-4 text-xs">
-          Cart renders live OrderCloud line items. Empty until a shopper adds a product.
-        </p>
-      )}
-      <CartPanel />
-    </section>
-  );
-};
+}
