@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import NextLink from "next/link";
 import type React from "react";
 import { Link, Text, useSitecore } from "@sitecore-content-sdk/nextjs";
 import type { NavigationLinkFields, NavigationProps } from "./navigation.props";
@@ -8,6 +9,7 @@ import {
   flattenNavigationItems,
   getNavigationItems,
   isFlatNavigation,
+  navigationIncludesCart,
   splitPrimaryAndUtilityItems,
 } from "./navigation.utils";
 
@@ -149,6 +151,16 @@ export const Default: React.FC<NavigationProps> = ({
           ))}
           {utility && (
             <NavigationItem key={utility.Id} fields={utility} isUtility />
+          )}
+          {!navigationIncludesCart(items) && (
+            <li className={utility ? "" : "md:ml-auto"}>
+              <NextLink
+                href="/cart"
+                className="inline-flex min-h-11 items-center text-sm font-medium hover:underline"
+              >
+                Cart
+              </NextLink>
+            </li>
           )}
         </ul>
       </div>
