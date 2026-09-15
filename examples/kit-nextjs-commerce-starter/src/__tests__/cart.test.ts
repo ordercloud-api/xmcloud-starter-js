@@ -92,7 +92,7 @@ describe("CartService", () => {
     expect(patch).toHaveBeenCalledWith(
       {
         xp: {
-          CheckoutStatus: "pending",
+          CheckoutStatus: "Pending",
           ocClientId: "buyer-client-id",
           stripeSessionId: "cs_test_123",
         },

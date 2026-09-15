@@ -1,6 +1,7 @@
-import Stripe from "stripe";
 import type { CommerceCart } from "@/lib/commerce/cart/types";
+import { getStripeClientForApiKey } from "./stripe-client";
 import type { StripeClientCredentials } from "./vault";
+import type Stripe from "stripe";
 
 export const toStripeCheckoutLineItems = (
   cart: CommerceCart,
@@ -37,7 +38,7 @@ export const createHostedCheckoutSession = async (
     throw new Error("Cart is missing an OrderCloud order id");
   }
 
-  const stripe = new Stripe(credentials.apiKey);
+  const stripe = getStripeClientForApiKey(credentials.apiKey);
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     line_items: toStripeCheckoutLineItems(cart),

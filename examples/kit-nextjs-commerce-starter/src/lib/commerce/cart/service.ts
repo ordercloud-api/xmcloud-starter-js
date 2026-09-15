@@ -73,7 +73,7 @@ export class CartService {
       Cart.Patch(
         {
           xp: {
-            CheckoutStatus: "pending",
+            CheckoutStatus: "Pending",
             ocClientId: input.clientId,
             stripeSessionId: input.stripeSessionId,
           },
