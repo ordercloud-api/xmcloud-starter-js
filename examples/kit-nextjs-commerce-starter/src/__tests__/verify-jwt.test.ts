@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { exportJWK, generateKeyPair, SignJWT } from "jose";
+import { exportJWK, generateKeyPair, SignJWT, type KeyLike } from "jose";
 import {
   JwtVerificationError,
   clearOrderCloudJwtKeyCache,
@@ -16,7 +16,7 @@ afterEach(() => {
 });
 
 const mintToken = async (
-  privateKey: CryptoKey,
+  privateKey: KeyLike,
   claims: Record<string, unknown> = {},
   {
     audience = AUD,
