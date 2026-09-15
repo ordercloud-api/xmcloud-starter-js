@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  FEATURED_PRODUCT_LIMIT,
+  limitItems,
   normalizeProductListSource,
   parseProductReferenceList,
   resolveProductListSource,
@@ -65,5 +67,13 @@ describe("product list source", () => {
         targetItems: [{ ID: "SKU-3", Name: "Three" }],
       }),
     ).toEqual([{ id: "SKU-3", name: "Three" }]);
+  });
+
+  it("limits featured lists without mutating the source array", () => {
+    const items = ["a", "b", "c", "d"];
+    expect(limitItems(items, FEATURED_PRODUCT_LIMIT)).toEqual(["a", "b", "c"]);
+    expect(items).toEqual(["a", "b", "c", "d"]);
+    expect(limitItems(items, undefined)).toEqual(items);
+    expect(limitItems(items, 0)).toEqual(items);
   });
 });

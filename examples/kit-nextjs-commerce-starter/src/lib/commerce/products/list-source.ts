@@ -9,6 +9,18 @@ export type ProductListSource =
   | "ordercloud-picker"
   | "sitecore";
 
+export type ProductListPresentation = "catalog" | "featured";
+
+export const FEATURED_PRODUCT_LIMIT = 3;
+export const CATALOG_LIST_HREF = "/products";
+
+export const limitItems = <T>(items: T[], limit?: number): T[] => {
+  if (typeof limit !== "number" || !Number.isFinite(limit) || limit <= 0) {
+    return items;
+  }
+  return items.slice(0, limit);
+};
+
 const asRecord = (value: unknown): Record<string, unknown> | undefined =>
   value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
