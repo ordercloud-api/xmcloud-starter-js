@@ -17,6 +17,15 @@ SharedFields:
     query ProductListingQuery($datasource: String!, $language: String!) {
       datasource: item(path: $datasource, language: $language) {
         id
+        productListSource: field(name: "productListSource") {
+          jsonValue
+        }
+        orderCloudProducts: field(name: "orderCloudProducts") {
+          jsonValue
+        }
+        detailPage: field(name: "detailPage") {
+          jsonValue
+        }
         ... on ProductListing {
           title {
             jsonValue

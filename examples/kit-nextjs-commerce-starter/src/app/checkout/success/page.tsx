@@ -1,80 +1,108 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { readStoredOrderCloudToken } from '@/lib/commerce/auth/token-store';
+import { getCheckoutGatewayUrl } from '@/lib/commerce/checkout/gateway-url';
+import {
+  CHECKOUT_ORDER_ID_STORAGE_KEY,
+  type GatewayCheckoutStatus,
+} from '@/lib/commerce/checkout/status';
 
-type SessionData = {
-  id: string;
-  paymentStatus: string;
-  customerEmail: string | null;
-  amountTotal: number | null;
-  currency: string | null;
-  ocOrderId: string;
-  connectedAccountId: string | null;
+type CheckoutStatusPayload = {
+  orderId: string;
+  checkoutStatus: GatewayCheckoutStatus;
   error?: string;
 };
 
-const formatCents = (cents: number | null, currency = 'usd') => {
-  if (cents == null) return '—';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency.toUpperCase(),
-  }).format(cents / 100);
-};
+const POLL_INTERVAL_MS = 2000;
+const POLL_TIMEOUT_MS = 60_000;
 
 function CheckoutSuccessContent() {
-  const searchParams = useSearchParams();
-  const sessionId = searchParams.get('session_id');
-  const [session, setSession] = useState<SessionData | null>(null);
+  const [status, setStatus] = useState<CheckoutStatusPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const startedAtRef = useRef(Date.now());
 
   useEffect(() => {
-    if (!sessionId) return;
-    fetch(`/api/commerce/checkout/connect/session?session_id=${encodeURIComponent(sessionId)}`)
-      .then(async (response) => {
-        const payload = (await response.json()) as SessionData;
-        if (!response.ok) throw new Error(payload.error || 'Unable to load session');
-        setSession(payload);
-      })
-      .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : 'Unable to load session');
-      });
-  }, [sessionId]);
+    let active = true;
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const poll = async () => {
+      try {
+        const token = readStoredOrderCloudToken()?.accessToken;
+        const orderId =
+          typeof window !== 'undefined'
+            ? sessionStorage.getItem(CHECKOUT_ORDER_ID_STORAGE_KEY)
+            : null;
+
+        if (!token) throw new Error('Shopper session expired. Return to the cart and try again.');
+        if (!orderId) throw new Error('Missing checkout order id. Start checkout from the cart again.');
+
+        const response = await fetch(
+          getCheckoutGatewayUrl(`/stripe/status?orderId=${encodeURIComponent(orderId)}`),
+          {
+            cache: 'no-store',
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        const payload = (await response.json()) as CheckoutStatusPayload;
+        if (!response.ok) throw new Error(payload.error || 'Unable to load order status');
+        if (!active) return;
+
+        setStatus(payload);
+        setError(null);
+
+        if (payload.checkoutStatus === 'Pending' && Date.now() - startedAtRef.current < POLL_TIMEOUT_MS) {
+          timeoutId = setTimeout(poll, POLL_INTERVAL_MS);
+        }
+      } catch (err: unknown) {
+        if (!active) return;
+        setError(err instanceof Error ? err.message : 'Unable to load order status');
+        if (Date.now() - startedAtRef.current < POLL_TIMEOUT_MS) {
+          timeoutId = setTimeout(poll, POLL_INTERVAL_MS);
+        }
+      }
+    };
+
+    void poll();
+
+    return () => {
+      active = false;
+      clearTimeout(timeoutId);
+    };
+  }, []);
+
+  const checkoutStatus = status?.checkoutStatus ?? 'Pending';
 
   return (
     <main className="mx-auto flex min-h-[60vh] max-w-xl flex-col justify-center gap-4 px-6 py-16">
       <p className="text-muted-foreground text-xs font-semibold uppercase tracking-[0.16em]">
-        Stripe Connect SaaS
+        OrderCloud Checkout Gateway
       </p>
-      <h1 className="text-3xl font-semibold">Payment received</h1>
+      <h1 className="text-3xl font-semibold">
+        {checkoutStatus === 'Completed' && 'Payment received'}
+        {checkoutStatus === 'Failed' && 'Payment failed'}
+        {checkoutStatus === 'Pending' && 'Confirming your payment…'}
+      </h1>
       <p className="text-muted-foreground text-sm">
-        The charge was created on the connected merchant account. OrderCloud fulfillment runs from
-        the Stripe webhook, not this page.
+        Fulfillment runs from the Stripe webhook, not this page. This page polls the order until
+        that webhook has finished.
       </p>
       {error && <p className="text-sm text-red-600">{error}</p>}
-      {session && (
+      {status && (
         <dl className="space-y-2 text-sm">
           <div>
-            <dt className="text-muted-foreground">Connected account</dt>
-            <dd className="font-mono text-xs">{session.connectedAccountId}</dd>
-          </div>
-          <div>
             <dt className="text-muted-foreground">OrderCloud order</dt>
-            <dd className="font-mono text-xs">{session.ocOrderId}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">Amount</dt>
-            <dd>{formatCents(session.amountTotal, session.currency || 'usd')}</dd>
+            <dd className="font-mono text-xs">{status.orderId}</dd>
           </div>
           <div>
             <dt className="text-muted-foreground">Status</dt>
-            <dd>{session.paymentStatus}</dd>
+            <dd>{checkoutStatus}</dd>
           </div>
         </dl>
       )}
-      <Link href="/" className="text-sm underline">
-        Back to catalog
+      <Link href="/cart" className="text-sm underline">
+        Back to cart
       </Link>
     </main>
   );

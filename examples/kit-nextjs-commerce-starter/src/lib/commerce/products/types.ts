@@ -5,6 +5,7 @@ export type CommerceProduct = {
   name: string;
   description?: string;
   imageUrl?: string;
+  thumbnailUrl?: string;
   images: CommerceProductImage[];
   brand?: string;
   category?: string;
@@ -14,21 +15,18 @@ export type CommerceProduct = {
 
 export type CommerceProductImage = {
   url: string;
+  thumbnailUrl?: string;
   alt?: string;
 };
 
 type CommerceProductXp = {
-  imageUrl?: unknown;
-  ImageUrl?: unknown;
-  images?: unknown;
   Images?: unknown;
-  brand?: unknown;
-  category?: unknown;
-  price?: unknown;
+  Brand?: unknown;
+  Category?: unknown;
+  Price?: unknown;
 };
 
 export type OrderCloudBuyerProduct = BuyerProduct<CommerceProductXp> & {
-  ImageUrl?: unknown;
   DefaultPriceSchedule?: PriceSchedule;
 };
 

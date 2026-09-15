@@ -68,15 +68,21 @@ describe('ProductsService', () => {
     );
   });
 
-  it('normalizes a primary image and ordered XP gallery images', async () => {
+  it('maps the updated XP schema and moves the primary image first', async () => {
     vi.spyOn(Me, 'GetProduct').mockResolvedValue({
       ID: 'SKU-IMAGES',
       Name: 'Gallery product',
-      ImageUrl: 'https://images.example.test/primary.jpg',
       xp: {
-        images: [
-          'https://images.example.test/primary.jpg',
-          { url: 'https://images.example.test/detail.jpg', alt: 'Product detail' },
+        Brand: 'Jordan',
+        Category: 'Basketball Lifestyle',
+        Price: 189.99,
+        Images: [
+          { Url: 'https://images.example.test/detail.jpg' },
+          {
+            Url: 'https://images.example.test/primary.jpg',
+            Thumbnailurl: 'https://images.example.test/primary-thumb.jpg',
+            Primary: true,
+          },
         ],
       },
     } as never);
@@ -84,9 +90,39 @@ describe('ProductsService', () => {
 
     await expect(service.get('SKU-IMAGES')).resolves.toMatchObject({
       imageUrl: 'https://images.example.test/primary.jpg',
+      thumbnailUrl: 'https://images.example.test/primary-thumb.jpg',
+      brand: 'Jordan',
+      category: 'Basketball Lifestyle',
+      price: 189.99,
       images: [
-        { url: 'https://images.example.test/primary.jpg' },
-        { url: 'https://images.example.test/detail.jpg', alt: 'Product detail' },
+        {
+          url: 'https://images.example.test/primary.jpg',
+          thumbnailUrl: 'https://images.example.test/primary-thumb.jpg',
+        },
+        { url: 'https://images.example.test/detail.jpg' },
+      ],
+    });
+  });
+
+  it('uses the first product image when no primary image is provided', async () => {
+    vi.spyOn(Me, 'GetProduct').mockResolvedValue({
+      ID: 'SKU-NO-PRIMARY',
+      Name: 'Gallery product',
+      xp: {
+        Images: [
+          { Url: 'https://images.example.test/first.jpg' },
+          { Url: 'https://images.example.test/second.jpg' },
+        ],
+      },
+    } as never);
+    const service = new ProductsService(request);
+
+    await expect(service.get('SKU-NO-PRIMARY')).resolves.toMatchObject({
+      imageUrl: 'https://images.example.test/first.jpg',
+      thumbnailUrl: 'https://images.example.test/first.jpg',
+      images: [
+        { url: 'https://images.example.test/first.jpg' },
+        { url: 'https://images.example.test/second.jpg' },
       ],
     });
   });
@@ -98,6 +134,41 @@ describe('ProductsService', () => {
     await expect(service.get(' ')).rejects.toThrow(
       'OrderCloud product ID is required',
     );
+    expect(getProduct).not.toHaveBeenCalled();
+  });
+
+  it('loads selected products by ID in order and skips missing ones', async () => {
+    const getProduct = vi.spyOn(Me, 'GetProduct').mockImplementation(async (productId) => {
+      if (productId === 'MISSING') throw new Error('Not found');
+      return { ID: productId, Name: productId } as never;
+    });
+    const service = new ProductsService(request);
+
+    await expect(
+      service.listByIds([' P-2 ', 'P-1', 'P-2', 'MISSING', '']),
+    ).resolves.toEqual({
+      items: [
+        { id: 'P-2', name: 'P-2', images: [] },
+        { id: 'P-1', name: 'P-1', images: [] },
+      ],
+      meta: { totalCount: 2 },
+    });
+    expect(getProduct).toHaveBeenCalledTimes(3);
+    expect(getProduct.mock.calls.map((call) => call[0])).toEqual([
+      'P-2',
+      'P-1',
+      'MISSING',
+    ]);
+  });
+
+  it('returns an empty list without requesting products', async () => {
+    const getProduct = vi.spyOn(Me, 'GetProduct');
+    const service = new ProductsService(request);
+
+    await expect(service.listByIds([' ', ''])).resolves.toEqual({
+      items: [],
+      meta: { totalCount: 0 },
+    });
     expect(getProduct).not.toHaveBeenCalled();
   });
 
@@ -128,9 +199,53 @@ describe('ProductsService', () => {
         definesVariant: true,
         defaultOptionId: 'MEDIUM',
         defaultValue: undefined,
+        presentation: {
+          control: undefined,
+          textControl: undefined,
+          label: undefined,
+          helpText: undefined,
+          placeholder: undefined,
+          prefix: undefined,
+          suffix: undefined,
+        },
+        validation: {
+          min: undefined,
+          max: undefined,
+          step: undefined,
+          minLength: undefined,
+          maxLength: undefined,
+          minDate: undefined,
+          maxDate: undefined,
+        },
         options: [
-          { id: 'SMALL', name: 'Small', isOpenText: false },
-          { id: 'MEDIUM', name: 'Medium', isOpenText: false },
+          {
+            id: 'SMALL',
+            name: 'Small',
+            isOpenText: false,
+            priceMarkupType: undefined,
+            priceMarkup: undefined,
+            presentation: {
+              label: undefined,
+              description: undefined,
+              color: undefined,
+              imageUrl: undefined,
+              badge: undefined,
+            },
+          },
+          {
+            id: 'MEDIUM',
+            name: 'Medium',
+            isOpenText: false,
+            priceMarkupType: undefined,
+            priceMarkup: undefined,
+            presentation: {
+              label: undefined,
+              description: undefined,
+              color: undefined,
+              imageUrl: undefined,
+              badge: undefined,
+            },
+          },
         ],
       },
     ]);

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import ShoppingCart from '@/components/commerce/ShoppingCart';
 import OrderCloudProductList from '@/components/commerce/OrderCloudProductList';
 import { OrderCloudProvider } from '@/contexts/OrderCloudContext';
 
@@ -364,10 +365,18 @@ export default function CommerceTestPage() {
       </div>
 
       <OrderCloudProvider>
-        <OrderCloudProductList title="OrderCloud products (component view)" compact />
+        <OrderCloudProductList
+          title="OrderCloud products (component view)"
+          compact
+          detailPageHref="/products"
+        />
+        <ShoppingCart />
       </OrderCloudProvider>
 
       <div className="grid gap-3 sm:grid-cols-2">
+        <Link className="rounded-lg border px-4 py-3 text-sm font-medium hover:bg-muted/60" href="/cart">
+          Open /cart
+        </Link>
         <Link className="rounded-lg border px-4 py-3 text-sm font-medium hover:bg-muted/60" href="/">
           Back to diagnostics home
         </Link>

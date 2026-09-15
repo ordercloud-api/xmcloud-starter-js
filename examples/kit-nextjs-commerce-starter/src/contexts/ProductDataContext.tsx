@@ -18,6 +18,13 @@ import {
   type ProductReference,
   type ProductSource,
 } from "@/lib/commerce/products/reference";
+import {
+  getInitialSpecSelections,
+  validateSpecSelections,
+  type CommerceProductSpec,
+  type ProductSpecSelection,
+  type ProductSpecSelections,
+} from "@/lib/commerce/products/specs";
 
 export type ProductDataStatus =
   | "loading-session"
@@ -33,6 +40,15 @@ export type ProductDataContextValue = {
   status: ProductDataStatus;
   error: Error | null;
   retry: () => void;
+  specs: CommerceProductSpec[];
+  specsStatus: "loading" | "ready" | "error";
+  specsError: string | null;
+  retrySpecs: () => void;
+  selections: ProductSpecSelections;
+  areSpecSelectionsValid: boolean;
+  validationErrors: Record<string, string>;
+  updateSelection: (specId: string, selection: ProductSpecSelection) => void;
+  setValidationErrors: (errors: Record<string, string>) => void;
 };
 
 const ProductDataContext = createContext<ProductDataContextValue | null>(null);
@@ -63,6 +79,15 @@ export const ProductDataProvider = ({
   const [loadStatus, setLoadStatus] =
     useState<ProductDataStatus>("loading-session");
   const [refreshSeed, setRefreshSeed] = useState(0);
+  const [specs, setSpecs] = useState<CommerceProductSpec[]>([]);
+  const [specsStatus, setSpecsStatus] =
+    useState<ProductDataContextValue["specsStatus"]>("loading");
+  const [specsError, setSpecsError] = useState<string | null>(null);
+  const [specsRefreshSeed, setSpecsRefreshSeed] = useState(0);
+  const [selections, setSelections] = useState<ProductSpecSelections>({});
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
   const productId = resolveProductId({
     source,
     routePath: [...routePath],
@@ -109,11 +134,7 @@ export const ProductDataProvider = ({
         const normalizedError =
           error instanceof Error ? error : new Error("Unable to load product");
         setLoadError(normalizedError);
-        setLoadStatus(
-          hasOrderCloudStatus(error, 404)
-            ? "not-found"
-            : "error",
-        );
+        setLoadStatus(hasOrderCloudStatus(error, 404) ? "not-found" : "error");
       });
 
     return () => {
@@ -122,7 +143,67 @@ export const ProductDataProvider = ({
     };
   }, [productId, products, refreshSeed, sessionError, sessionStatus]);
 
+  useEffect(() => {
+    setSpecs([]);
+    setSelections({});
+    setSpecsError(null);
+    setValidationErrors({});
+
+    if (!productId || loadStatus !== "ready") {
+      setSpecsStatus("loading");
+      return;
+    }
+
+    const controller = new AbortController();
+    let active = true;
+    setSpecsStatus("loading");
+
+    void products
+      .listSpecs(productId, { signal: controller.signal })
+      .then((nextSpecs) => {
+        if (!active) return;
+        setSpecs(nextSpecs);
+        setSelections(getInitialSpecSelections(nextSpecs));
+        setSpecsStatus("ready");
+      })
+      .catch((error: unknown) => {
+        if (!active || controller.signal.aborted) return;
+        setSpecsError(
+          error instanceof Error
+            ? error.message
+            : "Unable to load product options",
+        );
+        setSpecsStatus("error");
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [loadStatus, productId, products, specsRefreshSeed]);
+
   const retry = useCallback(() => setRefreshSeed((value) => value + 1), []);
+  const retrySpecs = useCallback(
+    () => setSpecsRefreshSeed((value) => value + 1),
+    [],
+  );
+  const updateSelection = useCallback(
+    (specId: string, selection: ProductSpecSelection) => {
+      setSelections((current) => ({ ...current, [specId]: selection }));
+      setValidationErrors((current) => {
+        const next = { ...current };
+        delete next[specId];
+        return next;
+      });
+    },
+    [],
+  );
+  const areSpecSelectionsValid = useMemo(
+    () =>
+      specsStatus === "ready" &&
+      Object.keys(validateSpecSelections(specs, selections)).length === 0,
+    [selections, specs, specsStatus],
+  );
 
   const value = useMemo<ProductDataContextValue>(
     () => ({
@@ -131,8 +212,31 @@ export const ProductDataProvider = ({
       status: loadStatus,
       error: loadError,
       retry,
+      specs,
+      specsStatus,
+      specsError,
+      retrySpecs,
+      selections,
+      areSpecSelectionsValid,
+      validationErrors,
+      updateSelection,
+      setValidationErrors,
     }),
-    [loadError, loadedProduct, loadStatus, productId, retry],
+    [
+      loadError,
+      loadedProduct,
+      loadStatus,
+      productId,
+      areSpecSelectionsValid,
+      retry,
+      retrySpecs,
+      selections,
+      specs,
+      specsError,
+      specsStatus,
+      updateSelection,
+      validationErrors,
+    ],
   );
 
   return (

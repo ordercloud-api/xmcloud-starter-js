@@ -1,7 +1,17 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
+
 const nextConfig: NextConfig = {
+  // Keep Turbopack rooted on this starter so a lockfile in a parent
+  // directory (for example ~/pnpm-lock.yaml) is not treated as the workspace root.
+  turbopack: {
+    root: projectRoot,
+  },
+
   // Allow specifying a distinct distDir when concurrently running app in a container
   distDir: process.env.NEXTJS_DIST_DIR || '.next',
   
@@ -65,6 +75,21 @@ const nextConfig: NextConfig = {
       {
         source: '/.well-known/ai.txt',
         destination: '/api/well-known/ai-txt',
+        locale: false,
+      },
+      {
+        source: '/stripe/checkout',
+        destination: '/api/commerce/stripe/checkout',
+        locale: false,
+      },
+      {
+        source: '/stripe/complete',
+        destination: '/api/commerce/stripe/complete',
+        locale: false,
+      },
+      {
+        source: '/stripe/status',
+        destination: '/api/commerce/stripe/status',
         locale: false,
       },
     ];

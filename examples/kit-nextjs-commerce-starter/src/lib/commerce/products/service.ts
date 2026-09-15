@@ -62,6 +62,36 @@ export class ProductsService {
     };
   }
 
+  async listByIds(
+    productIds: string[],
+    options: ProductRequestOptions = {},
+  ): Promise<CommerceProductList> {
+    const uniqueIds = [
+      ...new Set(
+        productIds
+          .map((productId) => productId.trim())
+          .filter((productId) => productId.length > 0),
+      ),
+    ];
+
+    const items = (
+      await Promise.all(
+        uniqueIds.map(async (productId) => {
+          try {
+            return await this.get(productId, options);
+          } catch {
+            return undefined;
+          }
+        }),
+      )
+    ).filter((product): product is CommerceProduct => !!product);
+
+    return {
+      items,
+      meta: { totalCount: items.length },
+    };
+  }
+
   async get(
     productId: string,
     options: ProductRequestOptions = {},

@@ -99,10 +99,16 @@ upsert_product() {
   "Description": "$description",
   "Active": true,
   "xp": {
-    "imageUrl": "$image_url",
-    "brand": "$brand",
-    "category": "$category",
-    "price": $price
+    "Brand": "$brand",
+    "Category": "$category",
+    "Price": $price,
+    "Images": [
+      {
+        "Url": "$image_url",
+        "Thumbnailurl": "$image_url",
+        "Primary": true
+      }
+    ]
   }
 }
 JSON

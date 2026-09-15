@@ -1,5 +1,5 @@
-import type { TextField } from '@sitecore-content-sdk/nextjs';
-import type { ComponentProps } from '@/lib/component-props';
+import type { TextField } from "@sitecore-content-sdk/nextjs";
+import type { ComponentProps } from "@/lib/component-props";
 
 export interface NavigationLinkFields {
   Id: string;
@@ -9,6 +9,7 @@ export interface NavigationLinkFields {
   Href?: string;
   Querystring?: string;
   Children?: NavigationLinkFields[];
+  Styles?: string[];
 }
 
 export type NavigationProps = ComponentProps & {

@@ -31,6 +31,7 @@ export default defineCliConfig({
       '**/*.props.ts',
       '**/*.props.tsx',
       '**/*.schema.ts',
+      '**/*.utils.ts',
     ],
   },
 });

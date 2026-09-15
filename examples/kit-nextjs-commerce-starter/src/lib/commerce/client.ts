@@ -28,7 +28,8 @@ export const requestAnonymousOrderCloudToken = async (): Promise<{
   expiresIn: number;
 }> => {
   configureOrderCloudSdk();
-  const response = await Auth.Anonymous('', getAnonymousScope());
+  const clientId = getCommerceBrowserConfig().clientId ?? '';
+  const response = await Auth.Anonymous(clientId, getAnonymousScope());
   if (!response.access_token || !response.expires_in) {
     throw new Error('OrderCloud anonymous auth returned an invalid token response');
   }

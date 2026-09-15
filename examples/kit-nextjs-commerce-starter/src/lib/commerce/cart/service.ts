@@ -7,13 +7,21 @@ import type {
   UpdateCartItemInput,
 } from "./types";
 
-export const getCart = async (shopperToken: string): Promise<CommerceCart> => {
+const createCartService = (shopperToken: string): CartService => {
   configureOrderCloudSdk();
-  const service = new CartService((operation) =>
+  return new CartService((operation) =>
     operation({ accessToken: shopperToken }),
   );
-  return service.get();
 };
+
+export const getCart = async (shopperToken: string): Promise<CommerceCart> =>
+  createCartService(shopperToken).get();
+
+export const markCartCheckoutPending = async (
+  shopperToken: string,
+  input: { clientId: string; stripeSessionId: string },
+): Promise<void> =>
+  createCartService(shopperToken).markCheckoutPending(input);
 
 export class CartService {
   constructor(private readonly request: CommerceRequest) {}
@@ -54,6 +62,24 @@ export class CartService {
   async removeItem(lineItemId: string): Promise<void> {
     await this.request((requestOptions) =>
       Cart.DeleteLineItem(lineItemId, requestOptions),
+    );
+  }
+
+  async markCheckoutPending(input: {
+    clientId: string;
+    stripeSessionId: string;
+  }): Promise<void> {
+    await this.request((requestOptions) =>
+      Cart.Patch(
+        {
+          xp: {
+            CheckoutStatus: "Pending",
+            ocClientId: input.clientId,
+            stripeSessionId: input.stripeSessionId,
+          },
+        },
+        requestOptions,
+      ),
     );
   }
 }
