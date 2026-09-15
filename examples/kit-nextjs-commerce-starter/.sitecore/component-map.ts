@@ -18,6 +18,7 @@ import * as PageContent from 'src/components/page-content/PageContent';
 import * as Navigation from 'src/components/navigation/Navigation';
 import * as Image from 'src/components/image/Image';
 import * as Container from 'src/components/container/Container';
+import * as Cart from 'src/components/cart/Cart';
 import * as AddToCart from 'src/components/add-to-cart/AddToCart';
 
 export const componentMap = new Map<string, NextjsContentSdkComponent>([
@@ -36,6 +37,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['Navigation', { ...Navigation, componentType: 'client' }],
   ['Image', { ...Image }],
   ['Container', { ...Container }],
+  ['Cart', { ...Cart, componentType: 'client' }],
   ['AddToCart', { ...AddToCart, componentType: 'client' }],
 ]);
 

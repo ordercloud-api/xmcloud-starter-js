@@ -9,6 +9,7 @@ import { Form } from '@sitecore-content-sdk/nextjs';
 import * as SpecForm from 'src/components/spec-form/SpecForm';
 import * as ProductInfo from 'src/components/product-info/ProductInfo';
 import * as Navigation from 'src/components/navigation/Navigation';
+import * as Cart from 'src/components/cart/Cart';
 import * as AddToCart from 'src/components/add-to-cart/AddToCart';
 
 export const componentMap = new Map<string, NextjsContentSdkComponent>([
@@ -18,6 +19,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['SpecForm', { ...SpecForm }],
   ['ProductInfo', { ...ProductInfo }],
   ['Navigation', { ...Navigation }],
+  ['Cart', { ...Cart }],
   ['AddToCart', { ...AddToCart }],
 ]);
 
