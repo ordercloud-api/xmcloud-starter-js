@@ -1,2 +1,18 @@
 @import "tailwindcss";
 @import "../assets/components/navigation.css";
+
+@theme inline {
+  --font-sans: var(--font-space-mono), ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  font-family: var(--font-sans);
+}
+
+body {
+  font-family: var(--font-sans);
+  background: #fff;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
