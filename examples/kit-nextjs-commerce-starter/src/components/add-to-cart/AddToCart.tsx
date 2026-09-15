@@ -99,6 +99,7 @@ export const Default: React.FC<ComponentProps> = ({ params, page }) => {
         className={`space-y-4 ${params.styles ?? ""}`}
         id={params.RenderingIdentifier}
         aria-live="polite"
+        data-component="AddToCart"
       >
         <div className="h-12 w-36 animate-pulse rounded bg-slate-100" />
         <span className="sr-only">Loading add to cart…</span>
@@ -125,31 +126,42 @@ export const Default: React.FC<ComponentProps> = ({ params, page }) => {
   return (
     <form
       onSubmit={(event) => void submit(event)}
-      className={`space-y-5 ${params.styles ?? ""}`}
+      className={`space-y-4 border-t border-slate-200 pt-6 ${params.styles ?? ""}`}
       id={params.RenderingIdentifier}
       data-component="AddToCart"
       noValidate
     >
-      <label className="block space-y-2">
-        <span className="text-sm font-medium">Quantity</span>
-        <input
-          type="number"
-          min={1}
-          step={1}
-          value={quantity}
-          disabled={submissionStatus === "adding"}
-          aria-describedby={
-            quantityError ? "product-quantity-error" : undefined
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+        <label className="block space-y-2">
+          <span className="text-sm font-medium">Quantity</span>
+          <input
+            type="number"
+            min={1}
+            step={1}
+            value={quantity}
+            disabled={submissionStatus === "adding"}
+            aria-describedby={
+              quantityError ? "product-quantity-error" : undefined
+            }
+            onChange={(event) => {
+              setQuantity(event.currentTarget.value);
+              setQuantityError(null);
+              setSubmissionStatus("idle");
+              setSubmissionMessage(null);
+            }}
+            className="w-24 rounded-md border border-slate-300 px-3 py-3"
+          />
+        </label>
+        <button
+          type="submit"
+          disabled={
+            !productData.areSpecSelectionsValid || submissionStatus === "adding"
           }
-          onChange={(event) => {
-            setQuantity(event.currentTarget.value);
-            setQuantityError(null);
-            setSubmissionStatus("idle");
-            setSubmissionMessage(null);
-          }}
-          className="w-24 rounded border border-slate-300 px-3 py-2"
-        />
-      </label>
+          className="min-h-12 flex-1 rounded-md bg-slate-950 px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {submissionStatus === "adding" ? "Adding…" : "Add to cart"}
+        </button>
+      </div>
       {quantityError && (
         <p
           id="product-quantity-error"
@@ -159,16 +171,6 @@ export const Default: React.FC<ComponentProps> = ({ params, page }) => {
           {quantityError}
         </p>
       )}
-
-      <button
-        type="submit"
-        disabled={
-          !productData.areSpecSelectionsValid || submissionStatus === "adding"
-        }
-        className="rounded bg-slate-900 px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {submissionStatus === "adding" ? "Adding…" : "Add to cart"}
-      </button>
 
       {submissionMessage && (
         <p

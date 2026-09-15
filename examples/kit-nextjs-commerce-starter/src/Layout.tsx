@@ -3,6 +3,8 @@ import { Field, ImageField, Page, DesignLibraryApp } from "@sitecore-content-sdk
 import Scripts from "src/Scripts";
 import SitecoreStyles from "components/content-sdk/SitecoreStyles";
 import { AppPlaceholder } from "@sitecore-content-sdk/nextjs";
+import HomeFeaturedProducts from "components/commerce/HomeFeaturedProducts";
+import { isHomeRoute } from "src/lib/layout-route";
 import componentMap from ".sitecore/component-map";
 
 interface LayoutProps {
@@ -67,6 +69,7 @@ const Layout = ({ page }: LayoutProps): JSX.Element => {
                     rendering={route}
                   />
                 )}
+                {route && isHomeRoute(route) && <HomeFeaturedProducts />}
               </div>
             </main>
             <footer>

@@ -1,0 +1,34 @@
+.product-detail-grid {
+  display: grid;
+  gap: 1.75rem;
+}
+
+@media (min-width: 768px) {
+  .product-detail-grid {
+    grid-template-columns: minmax(0, 1.12fr) minmax(18rem, 0.88fr);
+    column-gap: 3.5rem;
+    row-gap: 1.25rem;
+    align-items: start;
+  }
+
+  .product-detail-grid > :only-child:has([data-component="ProductInfo"]),
+  .product-detail-grid > *:has(> [data-component="ProductInfo"]),
+  .product-detail-grid [data-component="ProductInfo"] {
+    display: contents;
+  }
+
+  .product-detail-grid [data-slot="product-media"] {
+    grid-column: 1;
+    grid-row: 1 / span 20;
+    position: sticky;
+    top: 6rem;
+  }
+
+  .product-detail-grid [data-slot="product-summary"],
+  .product-detail-grid > *:has(> [data-component="SpecForm"]),
+  .product-detail-grid > *:has(> [data-component="AddToCart"]),
+  .product-detail-grid [data-component="SpecForm"],
+  .product-detail-grid [data-component="AddToCart"] {
+    grid-column: 2;
+  }
+}

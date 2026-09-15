@@ -35,14 +35,20 @@ export const Default: React.FC<ComponentProps> = ({ params, page }) => {
   ) {
     return (
       <div
-        className={`grid animate-pulse gap-6 md:grid-cols-2 ${params.styles ?? ""}`}
+        className={`animate-pulse ${params.styles ?? ""}`}
         id={params.RenderingIdentifier}
         aria-live="polite"
+        data-component="ProductInfo"
       >
-        <div className="aspect-square rounded bg-slate-100" />
-        <div className="space-y-4 py-4">
-          <div className="h-8 w-3/4 rounded bg-slate-100" />
-          <div className="h-6 w-1/3 rounded bg-slate-100" />
+        <div
+          data-slot="product-media"
+          className="aspect-square rounded-2xl bg-slate-100"
+        />
+        <div className="space-y-4 py-2" data-slot="product-summary">
+          <div className="h-4 w-24 rounded bg-slate-100" />
+          <div className="h-10 w-3/4 rounded bg-slate-100" />
+          <div className="h-7 w-1/3 rounded bg-slate-100" />
+          <div className="h-24 w-full rounded bg-slate-100" />
           <span className="sr-only">Loading product information…</span>
         </div>
       </div>
@@ -67,10 +73,15 @@ export const Default: React.FC<ComponentProps> = ({ params, page }) => {
   }
 
   const product = productData.product;
+  const eyebrow = [product.brand, product.category].filter(Boolean).join(" · ");
 
   return (
     <article
-      className={`grid gap-6 md:grid-cols-2 ${params.styles ?? ""}`}
+      className={
+        isAuthoring
+          ? `grid gap-8 md:grid-cols-2 ${params.styles ?? ""}`
+          : params.styles ?? ""
+      }
       id={params.RenderingIdentifier}
       data-component="ProductInfo"
     >
@@ -79,13 +90,24 @@ export const Default: React.FC<ComponentProps> = ({ params, page }) => {
         productName={product.name}
         isAuthoring={isAuthoring}
       />
-      <div className="space-y-4">
-        <h1 className="text-3xl font-semibold">{product.name}</h1>
-        <p className="text-xl font-semibold">
-          {formatPrice(product.price, product.currency)}
-        </p>
+      <div className="flex flex-col gap-5" data-slot="product-summary">
+        {eyebrow && (
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">
+            {eyebrow}
+          </p>
+        )}
+        <div className="space-y-3">
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-950 lg:text-4xl">
+            {product.name}
+          </h1>
+          <p className="text-2xl font-medium text-slate-950">
+            {formatPrice(product.price, product.currency)}
+          </p>
+        </div>
         {product.description && (
-          <p className="text-base leading-7">{product.description}</p>
+          <p className="max-w-prose text-base leading-7 text-slate-600">
+            {product.description}
+          </p>
         )}
       </div>
     </article>
