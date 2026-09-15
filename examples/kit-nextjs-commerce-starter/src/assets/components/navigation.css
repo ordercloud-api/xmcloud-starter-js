@@ -1,0 +1,104 @@
+.navigation.navigation-main > div > ul {
+  position: relative;
+}
+
+.navigation.indent-top {
+  margin-top: 2rem;
+}
+
+.navigation.indent-bottom {
+  margin-bottom: 2rem;
+}
+
+.navigation.indent {
+  padding-inline: 2rem;
+}
+
+.navigation.position-left #site-navigation-links {
+  justify-content: flex-start;
+}
+
+.navigation.position-center #site-navigation-links {
+  justify-content: center;
+}
+
+.navigation.position-right #site-navigation-links {
+  justify-content: flex-end;
+}
+
+.navigation li:focus-within > ul {
+  display: block;
+}
+
+.navigation.navigation-main .rel-level1 > ul {
+  margin-top: 0;
+}
+
+.navigation.navigation-main-horizontal .rel-level1 > ul[data-open="true"] {
+  display: flex;
+  width: min(42rem, calc(100vw - 2rem));
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.navigation.navigation-main-horizontal .rel-level2 {
+  flex: 1 1 10rem;
+}
+
+.navigation.navigation-main-vertical .rel-level1 > ul[data-open="true"] {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.navigation.navigation-sidebar > div,
+.navigation.sitemap-navigation > div,
+.navigation.navigation-fat > div {
+  max-width: none;
+}
+
+.navigation.navigation-sidebar #site-navigation-links,
+.navigation.sitemap-navigation #site-navigation-links {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.25rem;
+}
+
+.navigation.navigation-sidebar li > ul,
+.navigation.sitemap-navigation li > ul {
+  position: static;
+  display: flex;
+  flex-direction: column;
+  margin-left: 1rem;
+  border: 0;
+  box-shadow: none;
+}
+
+.navigation.navigation-fat #site-navigation-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  align-items: start;
+}
+
+.navigation.navigation-fat li > ul {
+  position: static;
+  display: flex;
+  flex-direction: column;
+  border: 0;
+  box-shadow: none;
+}
+
+.navigation.navigation-mobile #site-navigation-links {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+}
+
+.navigation.navigation-mobile #site-navigation-links > li {
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+.navigation.navigation-mobile #site-navigation-links > li:last-child {
+  border-bottom: 0;
+}
