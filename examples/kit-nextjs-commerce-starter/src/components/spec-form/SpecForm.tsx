@@ -36,6 +36,7 @@ const SpecForm: React.FC<
         className={`space-y-4 ${params.styles ?? ""}`}
         id={params.RenderingIdentifier}
         aria-live="polite"
+        data-component="SpecForm"
       >
         <div className="h-10 w-full animate-pulse rounded bg-slate-100" />
         <span className="sr-only">Loading product options…</span>
@@ -59,9 +60,26 @@ const SpecForm: React.FC<
     );
   }
 
+  const hasVisibleContent =
+    productData.specsStatus === "loading" ||
+    productData.specsStatus === "error" ||
+    (productData.specsStatus === "ready" && productData.specs.length > 0);
+
+  if (!hasVisibleContent) {
+    return isAuthoring ? (
+      <div
+        className={`rounded border border-dashed p-3 text-sm text-slate-600 ${params.styles ?? ""}`}
+        id={params.RenderingIdentifier}
+        data-component="SpecForm"
+      >
+        No product options are configured.
+      </div>
+    ) : null;
+  }
+
   return (
     <div
-      className={`space-y-4 ${params.styles ?? ""}`}
+      className={`space-y-4 border-t border-slate-200 pt-6 ${params.styles ?? ""}`}
       id={params.RenderingIdentifier}
       data-component="SpecForm"
     >
