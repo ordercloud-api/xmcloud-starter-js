@@ -7,7 +7,12 @@ export const Default: React.FC<RichTextProps> = ({ fields, params }) => {
   const text = fields?.Text;
 
   return (
-    <div className={`space-y-2 text-sm leading-relaxed ${styles ?? ''}`} id={id} data-component="RichText">
+    <div
+      className={`space-y-3 text-base leading-relaxed ${styles ?? ''}`}
+      id={id}
+      data-component="RichText"
+      data-class-change
+    >
       {text ? (
         <ContentSdkRichText field={text} />
       ) : (
