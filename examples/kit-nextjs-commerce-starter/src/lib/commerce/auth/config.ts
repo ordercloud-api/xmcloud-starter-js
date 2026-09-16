@@ -2,14 +2,6 @@ import 'server-only';
 
 const read = (key: string): string => process.env[key]?.trim() || '';
 
-const readRequired = (key: string): string => {
-  const value = read(key);
-  if (!value) {
-    throw new Error(`Missing required OrderCloud configuration: ${key}`);
-  }
-  return value;
-};
-
 const normalize = (url: string): string => url.replace(/\/$/, '');
 
 const resolvedClientId = (): string => {
@@ -31,9 +23,6 @@ const resolvedClientId = (): string => {
 export const commerceAuthConfig = {
   get baseApiUrl(): string {
     return normalize(read('NEXT_PUBLIC_ORDERCLOUD_BASE_API_URL') || 'https://sandboxapi.ordercloud.io');
-  },
-  get proxyBaseUrl(): string {
-    return normalize(readRequired('NEXT_PUBLIC_ORDERCLOUD_PROXY_URL'));
   },
   get buyerClientId(): string {
     return resolvedClientId();

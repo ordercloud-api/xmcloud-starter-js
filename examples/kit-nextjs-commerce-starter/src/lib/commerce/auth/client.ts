@@ -41,27 +41,17 @@ const asMessage = (body: unknown, fallback: string): string => {
 
 export const orderCloudTokenRequest = async <T>(params: URLSearchParams): Promise<T> => {
   const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+  const tokenParams = new URLSearchParams(params);
+  if (!tokenParams.get('client_id')) {
+    tokenParams.set('client_id', commerceAuthConfig.buyerClientId);
+  }
 
-  let response = await fetch(`${commerceAuthConfig.proxyBaseUrl}/oauth/token`, {
+  const response = await fetch(`${commerceAuthConfig.baseApiUrl}/oauth/token`, {
     method: 'POST',
     headers,
-    body: params.toString(),
+    body: tokenParams.toString(),
     cache: 'no-store',
   });
-
-  if (!response.ok) {
-    const directParams = new URLSearchParams(params);
-    if (!directParams.get('client_id')) {
-      directParams.set('client_id', commerceAuthConfig.buyerClientId);
-    }
-
-    response = await fetch(`${commerceAuthConfig.baseApiUrl}/oauth/token`, {
-      method: 'POST',
-      headers,
-      body: directParams.toString(),
-      cache: 'no-store',
-    });
-  }
 
   const body = await parseBody(response);
   if (!response.ok) {
@@ -83,21 +73,12 @@ export const orderCloudRequest = async <T>(
     headers.set('Content-Type', 'application/json');
   }
 
-  let response = await fetch(`${commerceAuthConfig.proxyBaseUrl}${normalizedPath}`, {
+  const response = await fetch(`${commerceAuthConfig.baseApiUrl}${normalizedPath}`, {
     method: options.method || 'GET',
     headers,
     body: options.body,
     cache: 'no-store',
   });
-
-  if (!response.ok) {
-    response = await fetch(`${commerceAuthConfig.baseApiUrl}${normalizedPath}`, {
-      method: options.method || 'GET',
-      headers,
-      body: options.body,
-      cache: 'no-store',
-    });
-  }
 
   const body = await parseBody(response);
   if (!response.ok) {
