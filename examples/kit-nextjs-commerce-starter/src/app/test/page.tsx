@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 type CheckStatus = 'idle' | 'running' | 'ok' | 'warn' | 'error';
 
-type ConnectReadinessPayload = {
+type CheckoutReadinessPayload = {
   ready: boolean;
   webhookReady?: boolean;
   checks: Record<string, boolean>;
@@ -36,7 +36,7 @@ const CHECKS: EndpointCheck[] = [
     key: 'readiness',
     label: 'Checkout configuration',
     method: 'GET',
-    path: '/api/commerce/checkout/connect/readiness',
+    path: '/api/commerce/checkout/readiness',
   },
   {
     key: 'anonymous',
@@ -103,7 +103,7 @@ export default function CommerceDiagnosticsPage() {
   const [runningChecks, setRunningChecks] = useState(false);
   const [results, setResults] = useState<Record<string, EndpointCheckResult>>(initialResults());
   const [lastRunAt, setLastRunAt] = useState<string | null>(null);
-  const [connectReadiness, setConnectReadiness] = useState<ConnectReadinessPayload | null>(null);
+  const [checkoutReadiness, setCheckoutReadiness] = useState<CheckoutReadinessPayload | null>(null);
   const [origin, setOrigin] = useState('n/a');
   const [runId, setRunId] = useState(0);
 
@@ -114,7 +114,7 @@ export default function CommerceDiagnosticsPage() {
   const runChecks = useCallback(async (signal: AbortSignal) => {
     setRunningChecks(true);
     setResults(initialResults());
-    setConnectReadiness(null);
+    setCheckoutReadiness(null);
 
     const runEndpointCheck = async (check: EndpointCheck): Promise<void> => {
       const startedAt = performance.now();
@@ -133,11 +133,11 @@ export default function CommerceDiagnosticsPage() {
         const isReadiness = check.key === 'readiness';
         const readinessPayload =
           isReadiness && body && typeof body === 'object'
-            ? (body as ConnectReadinessPayload)
+            ? (body as CheckoutReadinessPayload)
             : null;
 
         if (isReadiness && readinessPayload?.checks) {
-          setConnectReadiness(readinessPayload);
+          setCheckoutReadiness(readinessPayload);
         }
 
         if (response.ok) {
@@ -285,24 +285,33 @@ export default function CommerceDiagnosticsPage() {
 
       <div className="space-y-2 rounded-lg border p-4 text-sm">
         <p className="font-medium">Checkout configuration</p>
-        {!connectReadiness && (
+        {!checkoutReadiness && (
           <p className="text-muted-foreground">Waiting for configuration check…</p>
         )}
-        {connectReadiness && (
+        {checkoutReadiness && (
           <>
-            <p className={connectReadiness.ready ? 'text-emerald-700' : 'text-amber-700'}>
-              {connectReadiness.ready
-                ? 'Checkout start is configured.'
-                : 'Checkout start is missing required configuration.'}
+            <p className={checkoutReadiness.ready ? 'text-emerald-700' : 'text-amber-700'}>
+              {checkoutReadiness.ready
+                ? 'Hosted checkout vault is configured.'
+                : 'Hosted checkout is missing required vault configuration.'}
             </p>
             <div className="grid gap-1 text-xs sm:grid-cols-2">
-              {Object.entries(connectReadiness.checks).map(([key, value]) => (
-                <p key={key} className={value ? 'text-emerald-700' : 'text-amber-700'}>
-                  {value ? 'PASS' : 'FAIL'} {key}
-                </p>
-              ))}
+              {Object.entries(checkoutReadiness.checks).map(([key, value]) => {
+                const isOptional = key.startsWith('middleware');
+                const label = value ? 'PASS' : isOptional ? 'SKIP' : 'FAIL';
+                const tone = value
+                  ? 'text-emerald-700'
+                  : isOptional
+                    ? 'text-muted-foreground'
+                    : 'text-amber-700';
+                return (
+                  <p key={key} className={tone}>
+                    {label} {key}
+                  </p>
+                );
+              })}
             </div>
-            {connectReadiness.notes.map((note, index) => (
+            {checkoutReadiness.notes.map((note, index) => (
               <p key={`readiness-note-${index}`} className="text-muted-foreground">
                 {note}
               </p>
