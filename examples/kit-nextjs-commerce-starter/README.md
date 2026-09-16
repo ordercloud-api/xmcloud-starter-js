@@ -4,7 +4,7 @@
 
 This is the commerce Next.js (App Router) starter: XM Cloud layout rendering plus OrderCloud product, cart, and checkout APIs.
 
-Sitecore Pages uses `/` via the catch-all route. Local commerce diagnostics live at `/test` and `/oc-test`.
+Sitecore Pages uses `/` via the catch-all route. Local commerce diagnostics live at `/test` (alias `/oc-test`): proxy, shopper auth, and checkout configuration. Use `/products` and `/cart` for storefront behavior.
 
 ## How to Run This Starter Locally
 

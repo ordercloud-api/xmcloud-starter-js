@@ -1,37 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import ShoppingCart from '@/components/commerce/ShoppingCart';
-import OrderCloudProductList from '@/components/commerce/OrderCloudProductList';
-import { OrderCloudProvider } from '@/contexts/OrderCloudContext';
+import { useCallback, useEffect, useState } from 'react';
 
-type ProductsPayload = {
-  items?: Array<{ id?: string; name?: string }>;
-  error?: string;
-};
-
-type AnonymousPayload = {
-  ok?: boolean;
-  error?: string;
-};
+type CheckStatus = 'idle' | 'running' | 'ok' | 'warn' | 'error';
 
 type ConnectReadinessPayload = {
   ready: boolean;
-  checks: {
-    stripeSecretKey: boolean;
-    stripeWebhookSecret: boolean;
-    stripeConnectedAccountId: boolean;
-    appUrl: boolean;
-    middlewareClientId: boolean;
-    middlewareClientSecret: boolean;
-    orderCloudBuyerClientId: boolean;
-    orderCloudBuyerId: boolean;
-  };
+  webhookReady?: boolean;
+  checks: Record<string, boolean>;
   notes: string[];
 };
-
-type CheckStatus = 'idle' | 'running' | 'ok' | 'error';
 
 type EndpointCheck = {
   key: string;
@@ -47,30 +26,29 @@ type EndpointCheckResult = {
   message?: string;
 };
 
+const proxyUrl = process.env.NEXT_PUBLIC_ORDERCLOUD_PROXY_URL?.trim() || 'not set';
+const sandboxUrl =
+  process.env.NEXT_PUBLIC_ORDERCLOUD_BASE_API_URL?.trim() || 'https://sandboxapi.ordercloud.io';
+const catalogId = process.env.NEXT_PUBLIC_ORDERCLOUD_CATALOG_ID?.trim() || 'not set';
+
 const CHECKS: EndpointCheck[] = [
   {
+    key: 'proxy',
+    label: 'OrderCloud proxy',
+    method: 'GET',
+    path: '/api/commerce/diagnostics',
+  },
+  {
     key: 'readiness',
-    label: 'Stripe connect readiness',
+    label: 'Checkout configuration',
     method: 'GET',
     path: '/api/commerce/checkout/connect/readiness',
   },
   {
-    key: 'products',
-    label: 'Products list',
-    method: 'GET',
-    path: '/api/commerce/products',
-  },
-  {
     key: 'anonymous',
-    label: 'Anonymous auth',
+    label: 'Anonymous shopper token',
     method: 'POST',
     path: '/api/commerce/auth/anonymous',
-  },
-  {
-    key: 'cart',
-    label: 'Cart lookup',
-    method: 'GET',
-    path: '/api/commerce/cart',
   },
 ];
 
@@ -86,6 +64,7 @@ const asMessage = (value: unknown, fallback: string): string => {
 };
 
 const readErrorMessage = (body: unknown, fallback: string): string => {
+  if (typeof body === 'string' && body.trim()) return body;
   if (body && typeof body === 'object') {
     const payload = body as {
       error?: unknown;
@@ -94,15 +73,10 @@ const readErrorMessage = (body: unknown, fallback: string): string => {
       error_description?: unknown;
       notes?: unknown;
     };
-
     const notes = Array.isArray(payload.notes)
       ? payload.notes.filter((item): item is string => typeof item === 'string' && !!item.trim())
       : [];
-
-    if (notes.length > 0) {
-      return notes.join(' | ');
-    }
-
+    if (notes.length > 0) return notes.join(' | ');
     return (
       asMessage(payload.error_description, '') ||
       asMessage(payload.error, '') ||
@@ -111,205 +85,204 @@ const readErrorMessage = (body: unknown, fallback: string): string => {
       fallback
     );
   }
-
   return fallback;
 };
 
-export default function CommerceTestPage() {
-  const [loadingProducts, setLoadingProducts] = useState(false);
+const parseBody = async (response: Response): Promise<unknown> => {
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    return response.json().catch(() => null);
+  }
+  const text = await response.text().catch(() => '');
+  return text.trim() || null;
+};
+
+const statusClassName = (status: CheckStatus | undefined): string => {
+  if (status === 'ok') return 'text-emerald-700';
+  if (status === 'warn') return 'text-amber-700';
+  if (status === 'error') return 'text-red-700';
+  if (status === 'running') return 'text-amber-700';
+  return 'text-muted-foreground';
+};
+
+export default function CommerceDiagnosticsPage() {
   const [runningChecks, setRunningChecks] = useState(false);
   const [results, setResults] = useState<Record<string, EndpointCheckResult>>(initialResults());
   const [lastRunAt, setLastRunAt] = useState<string | null>(null);
-  const [productCount, setProductCount] = useState<number | null>(null);
-  const [productsError, setProductsError] = useState<string | null>(null);
-  const [creatingSession, setCreatingSession] = useState(false);
-  const [sessionResult, setSessionResult] = useState<string | null>(null);
   const [connectReadiness, setConnectReadiness] = useState<ConnectReadinessPayload | null>(null);
+  const [origin, setOrigin] = useState('n/a');
+  const [runId, setRunId] = useState(0);
 
   useEffect(() => {
-    const controller = new AbortController();
+    setOrigin(window.location.origin);
+  }, []);
 
-    const runEndpointCheck = async (check: EndpointCheck): Promise<{ response: Response; body: unknown }> => {
+  const runChecks = useCallback(async (signal: AbortSignal) => {
+    setRunningChecks(true);
+    setResults(initialResults());
+    setConnectReadiness(null);
+
+    const runEndpointCheck = async (check: EndpointCheck): Promise<void> => {
       const startedAt = performance.now();
       setResults((current) => ({ ...current, [check.key]: { status: 'running' } }));
 
       try {
         const response = await fetch(check.path, {
           method: check.method,
-          signal: controller.signal,
+          signal,
           cache: 'no-store',
           headers: check.method === 'POST' ? { 'Content-Type': 'application/json' } : undefined,
           body: check.method === 'POST' ? JSON.stringify({}) : undefined,
         });
-
-        const body = (await response.json().catch(() => null)) as unknown;
+        const body = await parseBody(response);
         const durationMs = Math.round(performance.now() - startedAt);
+        const isReadiness = check.key === 'readiness';
+        const readinessPayload =
+          isReadiness && body && typeof body === 'object'
+            ? (body as ConnectReadinessPayload)
+            : null;
 
-        if (!response.ok) {
-          const message = readErrorMessage(body, `${check.label} failed with ${response.status}`);
+        if (isReadiness && readinessPayload?.checks) {
+          setConnectReadiness(readinessPayload);
+        }
+
+        if (response.ok) {
+          setResults((current) => ({
+            ...current,
+            [check.key]: { status: 'ok', statusCode: response.status, durationMs },
+          }));
+          return;
+        }
+
+        if (isReadiness && response.status === 503 && readinessPayload?.checks) {
           setResults((current) => ({
             ...current,
             [check.key]: {
-              status: 'error',
+              status: 'warn',
               statusCode: response.status,
               durationMs,
-              message,
+              message: readErrorMessage(body, 'Checkout is not fully configured'),
             },
           }));
-        } else {
-          setResults((current) => ({
-            ...current,
-            [check.key]: {
-              status: 'ok',
-              statusCode: response.status,
-              durationMs,
-            },
-          }));
+          return;
         }
 
-        return { response, body };
-      } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') {
-          throw error;
-        }
-
-        const durationMs = Math.round(performance.now() - startedAt);
         setResults((current) => ({
           ...current,
           [check.key]: {
             status: 'error',
+            statusCode: response.status,
             durationMs,
+            message: readErrorMessage(body, `${check.label} failed with ${response.status}`),
+          },
+        }));
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+
+        setResults((current) => ({
+          ...current,
+          [check.key]: {
+            status: 'error',
+            durationMs: Math.round(performance.now() - startedAt),
             message: error instanceof Error ? error.message : `${check.label} failed`,
           },
         }));
-        throw error;
       }
     };
 
-    const runAllChecks = async () => {
-      setRunningChecks(true);
-      setLoadingProducts(true);
-      setResults(initialResults());
-      setProductsError(null);
-      setSessionResult(null);
-
-      try {
-        const readiness = await runEndpointCheck(CHECKS[0]);
-        if (readiness.response.ok) {
-          setConnectReadiness((readiness.body ?? null) as ConnectReadinessPayload | null);
-        }
-
-        const products = await runEndpointCheck(CHECKS[1]);
-        if (products.response.ok) {
-          const payload = products.body as ProductsPayload | null;
-          setProductCount(Array.isArray(payload?.items) ? payload.items.length : 0);
-          setProductsError(null);
-        } else {
-          const payload = products.body as ProductsPayload | null;
-          setProductsError(payload?.error || 'Product API request failed');
-        }
-
-        const anonymous = await runEndpointCheck(CHECKS[2]);
-        if (anonymous.response.ok) {
-          const payload = anonymous.body as AnonymousPayload | null;
-          setSessionResult(payload?.ok ? 'Anonymous shopper session created.' : 'Anonymous session returned non-ok payload.');
-        }
-
-        await runEndpointCheck(CHECKS[3]);
-      } catch {
-        // Per-endpoint errors are already captured in result state.
-      } finally {
-        setLoadingProducts(false);
+    try {
+      for (const check of CHECKS) {
+        if (signal.aborted) return;
+        await runEndpointCheck(check);
+      }
+    } finally {
+      if (!signal.aborted) {
         setRunningChecks(false);
         setLastRunAt(new Date().toLocaleTimeString());
       }
-    };
-
-    void runAllChecks();
-    return () => controller.abort();
+    }
   }, []);
 
-  const createAnonymousSession = async () => {
-    setCreatingSession(true);
-    setSessionResult(null);
-
-    try {
-      const response = await fetch('/api/commerce/auth/anonymous', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
-      const payload = (await response.json()) as AnonymousPayload;
-
-      if (!response.ok || !payload.ok) {
-        throw new Error(payload.error || 'Anonymous session request failed');
-      }
-
-      setSessionResult('Anonymous shopper session created.');
-    } catch (error) {
-      setSessionResult(error instanceof Error ? error.message : 'Anonymous session request failed');
-    } finally {
-      setCreatingSession(false);
-    }
-  };
+  useEffect(() => {
+    const controller = new AbortController();
+    void runChecks(controller.signal);
+    return () => controller.abort();
+  }, [runChecks, runId]);
 
   return (
-    <main className="mx-auto flex min-h-[70vh] w-full max-w-3xl flex-col justify-center gap-6 px-6 py-16">
+    <main className="mx-auto flex min-h-[70vh] w-full max-w-3xl flex-col gap-6 px-6 py-16">
       <p className="text-muted-foreground text-xs font-semibold uppercase tracking-[0.16em]">
-        Local Commerce Diagnostics
+        Local commerce diagnostics
       </p>
-      <h1 className="text-4xl font-semibold">Basic Next.js Commerce Debug Panel</h1>
+      <h1 className="text-4xl font-semibold">Diagnostics</h1>
       <p className="text-muted-foreground text-sm">
-        Live checks for local commerce APIs. This page validates auth, products, cart, and Stripe connect readiness.
+        Checks environment, proxy reachability, shopper auth, and checkout configuration. Use{' '}
+        <Link className="underline" href="/products">
+          /products
+        </Link>{' '}
+        and{' '}
+        <Link className="underline" href="/cart">
+          /cart
+        </Link>{' '}
+        for storefront behavior.
       </p>
-      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-        <span>Origin: {typeof window !== 'undefined' ? window.location.origin : 'n/a'}</span>
-        <span>Proxy: {process.env.NEXT_PUBLIC_ORDERCLOUD_PROXY_URL || 'not set'}</span>
-        <span>Last run: {lastRunAt || 'running initial checks...'}</span>
+
+      <div className="grid gap-2 rounded-lg border p-4 text-xs text-muted-foreground sm:grid-cols-2">
+        <p>
+          Origin: <span className="text-foreground">{origin}</span>
+        </p>
+        <p>
+          Catalog: <span className="text-foreground">{catalogId}</span>
+        </p>
+        <p className="sm:col-span-2">
+          Proxy: <span className="text-foreground break-all">{proxyUrl}</span>
+        </p>
+        <p className="sm:col-span-2">
+          OrderCloud API: <span className="text-foreground break-all">{sandboxUrl}</span>
+        </p>
+        <p>
+          Last run: <span className="text-foreground">{lastRunAt || 'running…'}</span>
+        </p>
       </div>
 
       <div className="space-y-3 rounded-lg border p-4 text-sm">
-        <div className="flex items-center justify-between">
-          <p className="font-medium">Endpoint checks</p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="font-medium">Live checks</p>
           <button
             type="button"
-            onClick={() => {
-              window.location.reload();
-            }}
+            onClick={() => setRunId((current) => current + 1)}
             disabled={runningChecks}
             className="border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-md border px-3 py-1.5 font-semibold disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {runningChecks ? 'Running...' : 'Run again'}
+            {runningChecks ? 'Running…' : 'Run again'}
           </button>
         </div>
 
         <div className="space-y-2">
           {CHECKS.map((check) => {
             const result = results[check.key];
-            const statusClass =
-              result?.status === 'ok'
-                ? 'text-emerald-700'
-                : result?.status === 'error'
-                  ? 'text-red-700'
-                  : result?.status === 'running'
-                    ? 'text-amber-700'
-                    : 'text-muted-foreground';
-
             return (
               <div key={check.key} className="rounded-md border px-3 py-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="font-medium">{check.label}</p>
-                  <p className={statusClass}>
+                  <p className={statusClassName(result?.status)}>
                     {result?.status === 'ok' && `OK ${result.statusCode} in ${result.durationMs}ms`}
-                    {result?.status === 'error' && `ERROR ${result.statusCode || ''} in ${result.durationMs}ms`}
-                    {result?.status === 'running' && 'Running...'}
+                    {result?.status === 'warn' &&
+                      `WARN ${result.statusCode || ''} in ${result.durationMs}ms`}
+                    {result?.status === 'error' &&
+                      `ERROR ${result.statusCode || ''} in ${result.durationMs}ms`}
+                    {result?.status === 'running' && 'Running…'}
                     {(!result || result.status === 'idle') && 'Idle'}
                   </p>
                 </div>
                 <p className="text-muted-foreground text-xs">
                   {check.method} {check.path}
                 </p>
-                {result?.message && <p className="pt-1 text-xs text-red-700">{result.message}</p>}
+                {result?.message && (
+                  <p className={`pt-1 text-xs ${statusClassName(result.status)}`}>{result.message}</p>
+                )}
               </div>
             );
           })}
@@ -317,36 +290,16 @@ export default function CommerceTestPage() {
       </div>
 
       <div className="space-y-2 rounded-lg border p-4 text-sm">
-        <p className="font-medium">Product API</p>
-        {loadingProducts && <p className="text-muted-foreground">Loading products...</p>}
-        {!loadingProducts && productsError && <p className="text-red-600">{productsError}</p>}
-        {!loadingProducts && !productsError && (
-          <p className="text-emerald-700">Products loaded: {productCount}</p>
+        <p className="font-medium">Checkout configuration</p>
+        {!connectReadiness && (
+          <p className="text-muted-foreground">Waiting for configuration check…</p>
         )}
-      </div>
-
-      <div className="space-y-2 rounded-lg border p-4 text-sm">
-        <p className="font-medium">Anonymous shopper session</p>
-        <button
-          type="button"
-          onClick={createAnonymousSession}
-          disabled={creatingSession}
-          className="border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-md border px-3 py-2 font-semibold disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {creatingSession ? 'Creating session...' : 'Create anonymous session'}
-        </button>
-        {sessionResult && <p className="text-muted-foreground">{sessionResult}</p>}
-      </div>
-
-      <div className="space-y-2 rounded-lg border p-4 text-sm">
-        <p className="font-medium">Stripe Connect readiness</p>
-        {!connectReadiness && <p className="text-muted-foreground">Unable to load readiness.</p>}
         {connectReadiness && (
           <>
             <p className={connectReadiness.ready ? 'text-emerald-700' : 'text-amber-700'}>
               {connectReadiness.ready
-                ? 'Ready: checkout + webhook fulfillment can be proved.'
-                : 'Not ready yet: one or more required checks failed.'}
+                ? 'Checkout start is configured.'
+                : 'Checkout start is missing required configuration.'}
             </p>
             <div className="grid gap-1 text-xs sm:grid-cols-2">
               {Object.entries(connectReadiness.checks).map(([key, value]) => (
@@ -364,24 +317,15 @@ export default function CommerceTestPage() {
         )}
       </div>
 
-      <OrderCloudProvider>
-        <OrderCloudProductList
-          title="OrderCloud products (component view)"
-          compact
-          detailPageHref="/products"
-        />
-        <ShoppingCart />
-      </OrderCloudProvider>
-
       <div className="grid gap-3 sm:grid-cols-2">
+        <Link className="rounded-lg border px-4 py-3 text-sm font-medium hover:bg-muted/60" href="/products">
+          Open /products
+        </Link>
         <Link className="rounded-lg border px-4 py-3 text-sm font-medium hover:bg-muted/60" href="/cart">
           Open /cart
         </Link>
         <Link className="rounded-lg border px-4 py-3 text-sm font-medium hover:bg-muted/60" href="/">
-          Back to diagnostics home
-        </Link>
-        <Link className="rounded-lg border px-4 py-3 text-sm font-medium hover:bg-muted/60" href="/oc-test">
-          Open /oc-test alias
+          Open storefront home
         </Link>
       </div>
     </main>
