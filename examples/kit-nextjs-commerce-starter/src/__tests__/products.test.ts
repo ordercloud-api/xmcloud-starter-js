@@ -6,22 +6,21 @@ import { ProductsService } from '../lib/commerce/products/service';
 const request: CommerceRequest = (operation) => operation({ accessToken: 'test-token' });
 
 const originalCatalogId = process.env.NEXT_PUBLIC_ORDERCLOUD_CATALOG_ID;
-const originalProxyUrl = process.env.NEXT_PUBLIC_ORDERCLOUD_PROXY_URL;
+const originalClientId = process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID;
 
 afterEach(() => {
   vi.restoreAllMocks();
   if (originalCatalogId === undefined)
     delete process.env.NEXT_PUBLIC_ORDERCLOUD_CATALOG_ID;
   else process.env.NEXT_PUBLIC_ORDERCLOUD_CATALOG_ID = originalCatalogId;
-  if (originalProxyUrl === undefined)
-    delete process.env.NEXT_PUBLIC_ORDERCLOUD_PROXY_URL;
-  else process.env.NEXT_PUBLIC_ORDERCLOUD_PROXY_URL = originalProxyUrl;
+  if (originalClientId === undefined)
+    delete process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID;
+  else process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID = originalClientId;
 });
 
 describe('ProductsService', () => {
   it('searches the buyer catalog and maps metadata', async () => {
-    process.env.NEXT_PUBLIC_ORDERCLOUD_PROXY_URL =
-      'https://commerce.example.test';
+    process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID = 'buyer-client-id';
     process.env.NEXT_PUBLIC_ORDERCLOUD_CATALOG_ID = 'catalog/one';
     const listProducts = vi.spyOn(Me, 'ListProducts').mockResolvedValue({
       Items: [{ ID: 'P-1', Name: 'Headphones' }],
