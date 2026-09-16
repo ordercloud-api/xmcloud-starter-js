@@ -1,48 +1,9 @@
 import type {
   CommerceProduct,
-  CommerceProductImage,
   OrderCloudBuyerProduct,
 } from "./types";
 import { asFiniteNumber, asNonEmptyString, asRecord } from "../normalization";
-
-type MappedProductImage = CommerceProductImage & { primary: boolean };
-
-const toProductImage = (value: unknown): MappedProductImage | undefined => {
-  const image = asRecord(value);
-  const url = asNonEmptyString(image?.Url);
-  if (!url) return undefined;
-
-  return {
-    url,
-    thumbnailUrl: asNonEmptyString(image?.Thumbnailurl),
-    primary: image?.Primary === true,
-  };
-};
-
-const getImages = (
-  xp: Record<string, unknown> | undefined,
-): CommerceProductImage[] => {
-  const images = Array.isArray(xp?.Images)
-    ? xp.Images.flatMap((value) => {
-        const image = toProductImage(value);
-        return image ? [image] : [];
-      })
-    : [];
-  const uniqueImages = images.filter(
-    (image, index) =>
-      images.findIndex((candidate) => candidate.url === image.url) === index,
-  );
-  const primaryIndex = uniqueImages.findIndex((image) => image.primary);
-  const orderedImages =
-    primaryIndex > 0
-      ? [
-          uniqueImages[primaryIndex],
-          ...uniqueImages.filter((_, index) => index !== primaryIndex),
-        ]
-      : uniqueImages;
-
-  return orderedImages.map(({ primary: _primary, ...image }) => image);
-};
+import { getProductImages, toProductHeroImage } from "./images";
 
 const getPrice = (value: unknown): { price?: number; currency?: string } => {
   const priceSchedule = asRecord(value);
@@ -67,14 +28,13 @@ export const toCommerceProduct = (
 
   const xp = asRecord(product.xp);
   const price = getPrice(product.PriceSchedule ?? product.DefaultPriceSchedule);
-  const images = getImages(xp);
+  const images = getProductImages(xp);
 
   return {
     id,
     name,
     description: asNonEmptyString(product.Description),
-    imageUrl: images[0]?.url,
-    thumbnailUrl: images[0]?.thumbnailUrl ?? images[0]?.url,
+    ...toProductHeroImage(images),
     images,
     brand: asNonEmptyString(xp?.Brand),
     category: asNonEmptyString(xp?.Category),
