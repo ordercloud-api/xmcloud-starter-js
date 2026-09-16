@@ -4,7 +4,12 @@ import Scripts from "src/Scripts";
 import SitecoreStyles from "components/content-sdk/SitecoreStyles";
 import { AppPlaceholder } from "@sitecore-content-sdk/nextjs";
 import HomeFeaturedProducts from "components/commerce/HomeFeaturedProducts";
-import { isHomeRoute } from "src/lib/layout-route";
+import ShoppingCart from "components/commerce/ShoppingCart";
+import {
+  isCartRoute,
+  isHomeRoute,
+  isPlaceholderEmpty,
+} from "src/lib/layout-route";
 import componentMap from ".sitecore/component-map";
 
 interface LayoutProps {
@@ -70,6 +75,9 @@ const Layout = ({ page }: LayoutProps): JSX.Element => {
                   />
                 )}
                 {route && isHomeRoute(route) && <HomeFeaturedProducts />}
+                {route &&
+                  isCartRoute(route) &&
+                  isPlaceholderEmpty(route, "headless-main") && <ShoppingCart />}
               </div>
             </main>
             <footer>
