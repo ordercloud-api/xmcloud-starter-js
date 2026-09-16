@@ -5,15 +5,12 @@ import {
   runOrderCloudOperation,
 } from '../lib/commerce/client';
 
-const originalProxyUrl = process.env.NEXT_PUBLIC_ORDERCLOUD_PROXY_URL;
 const originalScope = process.env.NEXT_PUBLIC_ORDERCLOUD_ANONYMOUS_SCOPE;
 const originalClientId = process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID;
 const originalBaseApiUrl = process.env.NEXT_PUBLIC_ORDERCLOUD_BASE_API_URL;
 
 afterEach(() => {
   vi.restoreAllMocks();
-  if (originalProxyUrl === undefined) delete process.env.NEXT_PUBLIC_ORDERCLOUD_PROXY_URL;
-  else process.env.NEXT_PUBLIC_ORDERCLOUD_PROXY_URL = originalProxyUrl;
   if (originalScope === undefined) delete process.env.NEXT_PUBLIC_ORDERCLOUD_ANONYMOUS_SCOPE;
   else process.env.NEXT_PUBLIC_ORDERCLOUD_ANONYMOUS_SCOPE = originalScope;
   if (originalClientId === undefined) delete process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID;
@@ -23,10 +20,10 @@ afterEach(() => {
 });
 
 describe('OrderCloud SDK client', () => {
-  it('targets the storefront proxy and requests an anonymous token through the SDK', async () => {
-    process.env.NEXT_PUBLIC_ORDERCLOUD_PROXY_URL = 'https://proxy.example.test/oc/';
+  it('targets the configured OrderCloud API and requests an anonymous token through the SDK', async () => {
+    process.env.NEXT_PUBLIC_ORDERCLOUD_BASE_API_URL = 'https://sandboxapi.ordercloud.io/';
+    process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID = 'buyer-client-id';
     process.env.NEXT_PUBLIC_ORDERCLOUD_ANONYMOUS_SCOPE = 'Shopper';
-    delete process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID;
     const configure = vi.spyOn(Configuration, 'Set');
     const authenticate = vi.spyOn(Auth, 'Anonymous').mockResolvedValue({
       access_token: 'access-token',
@@ -40,15 +37,16 @@ describe('OrderCloud SDK client', () => {
       expiresIn: 3600,
     });
     expect(configure).toHaveBeenCalledWith({
-      baseApiUrl: 'https://proxy.example.test/oc',
+      baseApiUrl: 'https://sandboxapi.ordercloud.io',
     });
-    expect(authenticate).toHaveBeenCalledWith('', ['Shopper']);
+    expect(authenticate).toHaveBeenCalledWith('buyer-client-id', ['Shopper']);
   });
 
-  it('sends the public buyer client id when configured', async () => {
-    process.env.NEXT_PUBLIC_ORDERCLOUD_PROXY_URL = 'https://proxy.example.test/oc';
+  it('defaults to sandbox when no OrderCloud base URL is set', async () => {
+    delete process.env.NEXT_PUBLIC_ORDERCLOUD_BASE_API_URL;
     process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID = 'buyer-client-id';
     delete process.env.NEXT_PUBLIC_ORDERCLOUD_ANONYMOUS_SCOPE;
+    const configure = vi.spyOn(Configuration, 'Set');
     vi.spyOn(Auth, 'Anonymous').mockResolvedValue({
       access_token: 'access-token',
       expires_in: 3600,
@@ -58,43 +56,37 @@ describe('OrderCloud SDK client', () => {
 
     await requestAnonymousOrderCloudToken();
 
+    expect(configure).toHaveBeenCalledWith({
+      baseApiUrl: 'https://sandboxapi.ordercloud.io',
+    });
     expect(Auth.Anonymous).toHaveBeenCalledWith('buyer-client-id', undefined);
   });
 
-  it('retries sandbox when the proxy rejects a shopper token', async () => {
-    process.env.NEXT_PUBLIC_ORDERCLOUD_PROXY_URL = 'https://proxy.example.test/oc';
+  it('requires a buyer client id', async () => {
+    delete process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID;
+
+    await expect(requestAnonymousOrderCloudToken()).rejects.toThrow(
+      'Missing required OrderCloud environment variable: NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID'
+    );
+  });
+
+  it('runs OrderCloud operations against the configured API without a proxy fallback', async () => {
     process.env.NEXT_PUBLIC_ORDERCLOUD_BASE_API_URL = 'https://sandboxapi.ordercloud.io';
-    const operation = vi
-      .fn()
-      .mockRejectedValueOnce(new Error('Access token is invalid or expired.'))
-      .mockResolvedValueOnce({ items: [] });
+    process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID = 'buyer-client-id';
+    const configure = vi.spyOn(Configuration, 'Set');
+    const operation = vi.fn().mockResolvedValue({ items: [] });
 
     await expect(runOrderCloudOperation(operation, { accessToken: 'token' })).resolves.toEqual({
       items: [],
     });
-    expect(operation).toHaveBeenCalledTimes(2);
-  });
-
-  it('retries sandbox when the storefront proxy is unreachable', async () => {
-    process.env.NEXT_PUBLIC_ORDERCLOUD_PROXY_URL = 'https://proxy.example.test/oc';
-    process.env.NEXT_PUBLIC_ORDERCLOUD_BASE_API_URL = 'https://sandboxapi.ordercloud.io';
-    const configure = vi.spyOn(Configuration, 'Set');
-    const operation = vi
-      .fn()
-      .mockRejectedValueOnce(new Error('Network Error'))
-      .mockResolvedValueOnce({ ok: true });
-
-    await expect(runOrderCloudOperation(operation, { accessToken: 'token' })).resolves.toEqual({
-      ok: true,
+    expect(configure).toHaveBeenCalledWith({
+      baseApiUrl: 'https://sandboxapi.ordercloud.io',
     });
-    expect(configure).toHaveBeenCalledWith({ baseApiUrl: 'https://proxy.example.test/oc' });
-    expect(configure).toHaveBeenCalledWith({ baseApiUrl: 'https://sandboxapi.ordercloud.io' });
-    expect(operation).toHaveBeenCalledTimes(2);
+    expect(operation).toHaveBeenCalledTimes(1);
   });
 
-  it('does not retry sandbox for non-transient errors', async () => {
-    process.env.NEXT_PUBLIC_ORDERCLOUD_PROXY_URL = 'https://proxy.example.test/oc';
-    process.env.NEXT_PUBLIC_ORDERCLOUD_BASE_API_URL = 'https://sandboxapi.ordercloud.io';
+  it('does not retry a failed OrderCloud operation', async () => {
+    process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID = 'buyer-client-id';
     const operation = vi.fn().mockRejectedValue(new Error('NotFound'));
 
     await expect(runOrderCloudOperation(operation, { accessToken: 'token' })).rejects.toThrow(

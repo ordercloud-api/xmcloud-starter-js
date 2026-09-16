@@ -1,14 +1,17 @@
 export interface CommerceBrowserConfig {
-  proxyBaseUrl: string;
+  baseApiUrl: string;
   authCookieName: string;
-  clientId?: string;
+  clientId: string;
   anonymousScope?: string;
   catalogId?: string;
 }
 
 export const DEFAULT_ORDERCLOUD_AUTH_COOKIE_NAME = 'oc_anonymous_token';
+export const DEFAULT_ORDERCLOUD_BASE_API_URL = 'https://sandboxapi.ordercloud.io';
 
 const normalizeBaseUrl = (value: string): string => value.replace(/\/$/, '');
+
+const isPlaceholder = (value: string): boolean => value.includes('<') || value.includes('>');
 
 export const getOrderCloudAuthCookieName = (): string => {
   const cookieName =
@@ -25,26 +28,26 @@ export const getOrderCloudAuthCookieName = (): string => {
 };
 
 export const getCommerceBrowserConfig = (): CommerceBrowserConfig => {
-  const proxyBaseUrl = process.env.NEXT_PUBLIC_ORDERCLOUD_PROXY_URL?.trim();
-  if (!proxyBaseUrl) {
-    throw new Error(
-      'Missing required OrderCloud environment variable: NEXT_PUBLIC_ORDERCLOUD_PROXY_URL'
-    );
-  }
+  const baseApiUrl =
+    process.env.NEXT_PUBLIC_ORDERCLOUD_BASE_API_URL?.trim() || DEFAULT_ORDERCLOUD_BASE_API_URL;
 
   try {
-    new URL(proxyBaseUrl);
+    new URL(baseApiUrl);
   } catch {
-    throw new Error('Invalid NEXT_PUBLIC_ORDERCLOUD_PROXY_URL: expected an absolute URL');
+    throw new Error('Invalid NEXT_PUBLIC_ORDERCLOUD_BASE_API_URL: expected an absolute URL');
   }
 
   const clientId = process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID?.trim();
+  if (!clientId || isPlaceholder(clientId)) {
+    throw new Error(
+      'Missing required OrderCloud environment variable: NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID'
+    );
+  }
 
   return {
-    proxyBaseUrl: normalizeBaseUrl(proxyBaseUrl),
+    baseApiUrl: normalizeBaseUrl(baseApiUrl),
     authCookieName: getOrderCloudAuthCookieName(),
-    clientId:
-      clientId && !clientId.includes('<') && !clientId.includes('>') ? clientId : undefined,
+    clientId,
     anonymousScope: process.env.NEXT_PUBLIC_ORDERCLOUD_ANONYMOUS_SCOPE?.trim() || undefined,
     catalogId: process.env.NEXT_PUBLIC_ORDERCLOUD_CATALOG_ID?.trim() || undefined,
   };
