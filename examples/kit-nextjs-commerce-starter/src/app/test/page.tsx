@@ -26,18 +26,12 @@ type EndpointCheckResult = {
   message?: string;
 };
 
-const proxyUrl = process.env.NEXT_PUBLIC_ORDERCLOUD_PROXY_URL?.trim() || 'not set';
-const sandboxUrl =
+const orderCloudUrl =
   process.env.NEXT_PUBLIC_ORDERCLOUD_BASE_API_URL?.trim() || 'https://sandboxapi.ordercloud.io';
+const clientId = process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID?.trim() || 'not set';
 const catalogId = process.env.NEXT_PUBLIC_ORDERCLOUD_CATALOG_ID?.trim() || 'not set';
 
 const CHECKS: EndpointCheck[] = [
-  {
-    key: 'proxy',
-    label: 'OrderCloud proxy',
-    method: 'GET',
-    path: '/api/commerce/diagnostics',
-  },
   {
     key: 'readiness',
     label: 'Checkout configuration',
@@ -218,7 +212,7 @@ export default function CommerceDiagnosticsPage() {
       </p>
       <h1 className="text-4xl font-semibold">Diagnostics</h1>
       <p className="text-muted-foreground text-sm">
-        Checks environment, proxy reachability, shopper auth, and checkout configuration. Use{' '}
+        Checks environment, shopper auth, and checkout configuration. Use{' '}
         <Link className="underline" href="/products">
           /products
         </Link>{' '}
@@ -237,10 +231,10 @@ export default function CommerceDiagnosticsPage() {
           Catalog: <span className="text-foreground">{catalogId}</span>
         </p>
         <p className="sm:col-span-2">
-          Proxy: <span className="text-foreground break-all">{proxyUrl}</span>
+          OrderCloud API: <span className="text-foreground break-all">{orderCloudUrl}</span>
         </p>
         <p className="sm:col-span-2">
-          OrderCloud API: <span className="text-foreground break-all">{sandboxUrl}</span>
+          Buyer client ID: <span className="text-foreground break-all">{clientId}</span>
         </p>
         <p>
           Last run: <span className="text-foreground">{lastRunAt || 'running…'}</span>
