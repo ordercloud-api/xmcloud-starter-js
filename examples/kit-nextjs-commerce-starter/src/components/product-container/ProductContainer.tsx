@@ -72,7 +72,7 @@ export const Default: React.FC<ProductContainerProps> = ({
 
   return (
     <section
-      className={`mx-auto w-full max-w-6xl px-4 py-10 lg:py-14 ${params.styles ?? ""}`}
+      className={params.styles ?? ""}
       id={params.RenderingIdentifier}
       data-component="ProductContainer"
       data-class-change
@@ -83,14 +83,12 @@ export const Default: React.FC<ProductContainerProps> = ({
         previewProduct={previewProduct}
         isAuthoring={isAuthoring}
       >
-        <div className="space-y-6">
-          <AppPlaceholder
-            name={placeholderName}
-            rendering={rendering}
-            page={page}
-            componentMap={componentMap}
-          />
-        </div>
+        <AppPlaceholder
+          name={placeholderName}
+          rendering={rendering}
+          page={page}
+          componentMap={componentMap}
+        />
       </ProductDataProvider>
     </section>
   );

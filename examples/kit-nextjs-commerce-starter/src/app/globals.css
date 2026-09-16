@@ -1,6 +1,15 @@
 @import "tailwindcss";
 @import "../assets/components/navigation.css";
 @import "../assets/components/content-well.css";
+@import "../assets/components/tailwind-bootstrap-grid.css";
+
+@plugin "tailwind-bootstrap-grid" {
+  container_max_widths:
+    "sm", "576px", "md", "768px", "lg", "992px", "xl", "1200px", "2xl", "1400px";
+}
+
+@source inline("col-{1..12}");
+@source inline("offset-{0..11}");
 
 @theme inline {
   --font-sans: var(--font-space-mono), ui-sans-serif, system-ui, sans-serif;
