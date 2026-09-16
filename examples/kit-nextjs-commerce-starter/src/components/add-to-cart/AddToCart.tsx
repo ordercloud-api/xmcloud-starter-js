@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { ComponentProps } from "@/lib/component-props";
 import { useOrderCloud } from "@/contexts/OrderCloudContext";
 import { useProductContext } from "@/contexts/ProductDataContext";
+import { getCartDestinationFromRoute } from "@/lib/commerce/cart/destination";
 import {
   toLineItemSpecs,
   validateSpecSelections,
@@ -17,6 +18,7 @@ export const Default: React.FC<ComponentProps> = ({ params, page }) => {
   const productData = useProductContext();
   const { cart } = useOrderCloud();
   const isAuthoring = page.mode.isEditing || page.mode.isDesignLibrary;
+  const cartHref = getCartDestinationFromRoute(page.layout?.sitecore?.route).href;
   const [quantity, setQuantity] = useState("1");
   const [quantityError, setQuantityError] = useState<string | null>(null);
   const [submissionStatus, setSubmissionStatus] =
@@ -185,7 +187,7 @@ export const Default: React.FC<ComponentProps> = ({ params, page }) => {
           {submissionStatus === "added" && (
             <>
               {" "}
-              <Link href="/cart" className="font-semibold underline">
+              <Link href={cartHref} className="font-semibold underline">
                 View cart
               </Link>
             </>

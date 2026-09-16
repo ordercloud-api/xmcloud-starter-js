@@ -36,4 +36,4 @@ Not yet implemented / not yet promoted. See [the archive README](../README.md).
 
 | Draft | Spec |
 |---|---|
-| Cart product row → header mini-cart → author copy `(draft)` | [drafts/cart-row-minicart-copy.md](drafts/cart-row-minicart-copy.md) |
+| Cart product row → header mini-cart → author copy `(draft, tasks 1–2.5 done)` | [drafts/cart-row-minicart-copy.md](drafts/cart-row-minicart-copy.md) |

@@ -35,6 +35,12 @@ describe("isCartRoute", () => {
       true,
     );
     expect(isCartRoute({ name: "products" })).toBe(false);
+    expect(
+      isCartRoute(
+        { name: "checkout", itemPath: "/sitecore/content/commerce/Checkout" },
+        { href: "/cart" },
+      ),
+    ).toBe(false);
   });
 });
 

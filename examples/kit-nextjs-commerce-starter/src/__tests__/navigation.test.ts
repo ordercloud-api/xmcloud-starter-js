@@ -4,7 +4,6 @@ import {
   flattenNavigationItems,
   getNavigationItems,
   isFlatNavigation,
-  splitPrimaryAndUtilityItems,
 } from "../components/navigation/navigation.utils";
 
 const link = (
@@ -55,27 +54,5 @@ describe("isFlatNavigation", () => {
     expect(isFlatNavigation("1")).toBe(true);
     expect(isFlatNavigation("")).toBe(false);
     expect(isFlatNavigation(undefined)).toBe(false);
-  });
-});
-
-describe("splitPrimaryAndUtilityItems", () => {
-  it("keeps a single link in the primary group", () => {
-    const items = [link("1", "Home", "/")];
-    expect(splitPrimaryAndUtilityItems(items)).toEqual({ primary: items });
-  });
-
-  it("places the last authored link on the right as utility chrome", () => {
-    const items = [
-      link("1", "Home", "/"),
-      link("2", "Products", "/products"),
-      link("3", "Cart", "/cart"),
-    ];
-    const { primary, utility } = splitPrimaryAndUtilityItems(items);
-
-    expect(primary.map((item) => item.DisplayName)).toEqual([
-      "Home",
-      "Products",
-    ]);
-    expect(utility?.DisplayName).toBe("Cart");
   });
 });

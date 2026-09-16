@@ -7,25 +7,51 @@ status: draft
 
 # Cart product row, header mini-cart, author-owned copy
 
-> Part of [../index.md](../index.md). **Draft** — not yet implemented. Cross-cutting slice (not a new Sitecore rendering). Extends [helpers/order-cloud-cart.md](../helpers/order-cloud-cart.md) and [add-to-cart.md](../add-to-cart.md). Archive rules: [../../README.md](../../README.md).
+> Part of [../index.md](../index.md). **Draft** — tasks 1–2.5 are in code; 3–5 are not. Cross-cutting slice (not a new Sitecore rendering). Extends [helpers/order-cloud-cart.md](../helpers/order-cloud-cart.md) and [add-to-cart.md](../add-to-cart.md). Archive rules: [../../README.md](../../README.md).
 
 One slice, implemented **in this order**. Promo codes and shipping/auth-merge are explicitly later and must not expand this work.
 
 This is a **mapper + UI** slice against the cart the starter already has. It does **not** add a new Sitecore template for line items. Author copy uses dictionary (and optional cart-page fields) — see [Manual Content Editor Instructions](#manual-content-editor-instructions).
 
+## Session handoff (2026-09-16)
+
+**Start the next session at Task 3.** Do not re-do mapper, cart row, or nav identity.
+
+| Task | Status | What shipped |
+|---|---|---|
+| 1 Mapper | **done** | `products/images.ts`; cart types + `toCommerceCart` map `xp.Images` and `Specs` |
+| 2 Cart row UI | **done** | `CartLineRow` (full + unused `compact`); `cart/format.ts`; `/cart` uses the row |
+| 2.5 Cart nav identity | **done** | `cart/destination.ts`; Navigation partitions by `CartPage`; cart control is a **sibling** of the primary list; no `isUtility` / last-item split |
+| 3 `cartRevision` + `useCommerceCart` | **next** | Shared snapshot so AddToCart refreshes other cart surfaces |
+| 4 MiniCart | not started | Wrap the **cart-role** control from 2.5; Layout fallback; compact `CartLineRow` |
+| 5 Dictionary copy | not started | `dictionaryKeys` + English fallbacks |
+
+**CM already done (do not re-hunt Parameters Template):** this Content Editor does **not** show Parameters Template on Json/SXA renderings. Live Navigation **Parameters** string is `CartPage=/cart`. Code reads `CartPage` / `Cart page` from component params (and from that Parameters string). Default href is `/cart` if empty. A `Navigation Parameters` template with a Cart page General Link was created under `Templates/Project/commerce/Rendering Parameters` but is **not wired** to the rendering — ignore it unless a later session serializes Parameters Template.
+
+**Do not**
+
+- Treat the last nav link as Cart.
+- Add a MiniCart Sitecore rendering.
+- Start MiniCart before Task 3 (flyout that does not update after add is worse than none).
+- Point `CartPage` at `/checkout` (Stripe return URLs).
+
+**Task 3 entry points:** `OrderCloudContext` / `useOrderCloud().cart`; `AddToCart`; `commerce/ShoppingCart`. Spec: Decision A.
+
+**Task 4 entry points:** `Navigation.tsx` cart-role sibling (`variant="cart"`); `getCartDestination` / `partitionNavigationItems`; `CartLineRow` `compact`. Spec: Decisions C + E.
+
 **On promote:** fold into `helpers/order-cloud-cart.md` (and a `ShoppingCart` inventory row if we add one), add `helpers/mini-cart.md` if that helper ships, then delete this draft. Do not promote this file as a permanent `slices/` doc.
 
 ## Current state (what we are extending)
 
-| Piece | Today |
-|---|---|
-| Cart mapper | `toCommerceCart` keeps `id`, `productId`, `name`, `quantity`, `unitPrice` only. Drops `Product.xp.Images` and `Specs`. |
-| Cart UI | `commerce/ShoppingCart` is a text list: name, unit price, +/−, line total, Remove. Hardcoded English. |
-| Sitecore wrapper | `shopping-cart/ShoppingCart` is a leaf rendering with **no datasource template** (`ShoppingCartProps = ComponentProps`). Authoring hint only. |
-| Cart page | `Layout` renders that helper on the cart route when `headless-main` is empty. |
-| Add to cart | Mutates OrderCloud, then shows local "Added to cart" + `/cart` link. **Does not notify** the cart UI. |
-| Header | `Navigation` treats the **last authored link as Cart chrome**. Plain link, no count, no flyout. |
-| Shared cart state | None. Each cart surface independently calls `cart.get()`. |
+| Piece | After tasks 1–2.5 | Still open |
+|---|---|---|
+| Cart mapper | Maps `xp.Images` + `Specs` onto optional `imageUrl` / `thumbnailUrl` / `specs`. | — |
+| Cart UI | `CartLineRow` on `/cart` (thumb, specs, PDP name link, qty, remove). Hardcoded English. | Dictionary (task 5); compact density unused until MiniCart |
+| Sitecore wrapper | Unchanged leaf `shopping-cart/ShoppingCart`. | — |
+| Cart page | Layout empty-main fallback; `isCartRoute` also honors authored `CartPage` path segment. | — |
+| Add to cart | “View cart” href from `getCartDestinationFromRoute`. Still **does not notify** other cart UIs. | Task 3 `cartRevision` |
+| Header | Cart-role item pulled by `CartPage` (default `/cart`), sibling of primary `<ul>`, button chrome. No count, no flyout. | Task 4 MiniCart on that control |
+| Shared cart state | None. Each cart surface independently calls `cart.get()`. | Task 3 |
 
 `AddToCart`'s own spec already called this out: a badge/mini-cart cannot work until something re-fetches after add.
 
@@ -72,7 +98,10 @@ Keep checkout in that helper so the flyout and the cart page do not fork hosted-
 
 ### Decision B — One line-row helper, two densities
 
-**Recommendation: extract `CartLineRow` (or `CartPanel` + row) from `commerce/ShoppingCart`. Full page = comfortable row. Flyout = compact row. Same mapped item.**
+**Recommendation: extract `CartLineRow` from `commerce/ShoppingCart`. Full page = comfortable row. Flyout = compact row. Same mapped item.**
+
+- **Location:** `src/components/commerce/CartLineRow.tsx` (helper, excluded from the component map).
+- **Money / spec labels:** `src/lib/commerce/cart/format.ts` (`formatMoney`, `lineTotal`, `toCartItemSpecLabels`).
 
 Row contents (full and compact):
 
@@ -92,13 +121,13 @@ If a live site's PDP is **not** `/products/{id}`, that is a Content Editor / IA 
 
 **Recommendation: MiniCart is header chrome, not a new Sitecore rendering.**
 
-Mount it by wrapping Navigation's **utility (last) item** — the starter already documents that item as Cart. The authored link's `Href` is the "View cart" target (`/cart`). The authored title is the accessible name. Badge + flyout sit on that control.
+Mount it on the **cart-role nav item** identified in Decision E (not “the last link”). The authored `Href` is the “View cart” target. The authored title is the accessible name. Badge + flyout sit on that control.
 
 Do **not** register `MiniCart` in the component map. Authors should not have to place it on every page.
 
-Fallback: if Navigation has fewer than two links (no utility item), still render a MiniCart in `Layout` `<header>` pointing at `/cart`, so a missing Cart nav item does not hide the count.
+Fallback: if Navigation has **no cart-role item**, still render a MiniCart in `Layout` `<header>` using the **same authored cart destination** (Navigation param, default `/cart`), so a missing Cart nav item does not hide the count.
 
-**Do not** keep a duplicate plain "Cart" text link next to the bag. Wrapping the utility item avoids that.
+**Do not** keep a duplicate plain “Cart” text link next to the bag. The cart-role slot *is* the bag.
 
 Flyout:
 
@@ -106,6 +135,69 @@ Flyout:
 - Open: compact rows, subtotal, Checkout (same `startHostedCheckout` path), "View cart" using the nav href.
 - Keyboard: toggle button, Escape closes, focus returns to the control. Treat as a disclosure, not a modal, unless focus starts leaking into the page.
 - After `AddToCart` succeeds, bump revision so the badge updates on the PDP **without** navigation. Optional later: auto-open the flyout once — not in this slice (easy to annoy).
+
+### Decision E — Cart nav identity (do this before MiniCart)
+
+**The current `isUtility` path is a layout hack, not a contract.** `splitPrimaryAndUtilityItems` peels the last authored link, then `isUtility` means three unrelated things at once: “sit on the right”, “look like a button”, and “this is Cart”. Authored order is not identity. If someone adds Account after Cart, Account inherits the chrome. If Cart is not last, it looks like Home. SXA `Styles` tokens like `last` / `item1` are the same position heuristic with extra CSS classes — do not key MiniCart off those.
+
+Also the DOM is wrong for a bag: Cart is an `<li>` inside the same collapsible `<ul>` as Home/Products. On mobile the “button” disappears behind Menu. `md:ml-auto` is compensating for stuffing session chrome into the IA list.
+
+**Recommendation: give the cart link a role, a slot, and (later) a control — three names, not one boolean.**
+
+| Concern | What owns it | Not this |
+|---|---|---|
+| **Identity** — this link *is* the cart | Navigation **Parameters** string `CartPage=/path` (or GUID). Match by Id then href. | Last child, SXA `last`, DisplayName, Parameters Template hunt, hardcoded `/cart` as the only truth |
+| **Slot** — where it sits in the header | A **sibling** of the primary `<ul>`, trailing in the nav bar, always visible (including mobile) | `md:ml-auto` on the last `<li>` |
+| **Chrome** — how it looks / behaves | Role presentation now (button-looking `Link`); MiniCart later **replaces** that inner control with a disclosure | Styling a generic “utility” link |
+
+**Why a URL convention is not enough**
+
+`/cart` is only the starter default. If the page is `/basket`, last-segment matching misses it. If someone points the bag at `/checkout`, it also collides with this starter’s hosted checkout routes (`/checkout/success`, `/checkout/cancel`) — that must be an authoring warning, not something code treats as a synonym for cart.
+
+A checkbox on the Cart **page** also is not enough. That field is on the route you are viewing. Navigation on Home/PDP never receives it: the Headless Navigation resolver only emits `Id`, titles, `Href`, `Querystring`, `Children`, `Styles`. Arbitrary page fields do not travel with the tree.
+
+**Identity (Pages + code):**
+
+1. **Source of truth:** Navigation rendering **Parameters** (the visible text field, or Pages Additional parameters). Key `CartPage` (also `Cart page`). Value is a path (`/cart`, `/basket`) or a page item GUID. Match the nav node by **Id** when the value is a GUID, otherwise by normalized href. Caption still comes from that nav node.
+2. **Default when the param is empty:** `/cart` so the starter runs before anyone sets it.
+3. **One destination, many consumers.** `getCartDestination` / `getCartDestinationFromRoute` feed nav partition, Layout `isCartRoute`, and AddToCart “View cart”. Do not leave a second hardcoded `"/cart"` island.
+4. `isCartNavItem` — **No last-item fallback.** No match → primary links only.
+5. At most one cart-role item.
+
+Content Editor in this CM does **not** show Parameters Template on Json/SXA renderings (including AddToCart). Do not hunt for that field. Set `CartPage=/cart` on the rendering’s **Parameters** string instead. A Pages General Link picker would need serialization to assign Parameters Template; that is optional later, not required for 2.5.
+
+**Slot (DOM):**
+
+Replace last-`<li>`-in-the-list with a partition:
+
+```
+nav
+  bar
+    Menu button          (mobile)
+    ul#primary           Home, Products, …  — authored order, minus cart-role
+    CartNavControl       sibling, trailing — the cart-role item (or nothing)
+```
+
+`partitionNavigationItems` returns `{ primary, cart }`. Cart is **pulled out** of the list wherever the author put it. Adding About after Cart does not steal the slot. Putting Cart first still parks it on the right.
+
+Until MiniCart, `CartNavControl` is still the Sitecore `Link` (title + href authored), with the current border/padding classes applied because the **role** is cart — not because `isUtility` is true. Delete `isUtility` / `splitPrimaryAndUtilityItems`.
+
+**What we are explicitly not architecting**
+
+- A generic “utility” slot based on last-child. Account / search later get their **own** roles or sit in primary.
+- A MiniCart Sitecore rendering.
+- A “this is the cart” checkbox on the **page template** as the site-wide signal (it does not appear on nav nodes on other pages).
+- Hardcoded `/cart` as the only identity, or DisplayName `"Cart"`.
+- CSS `li:last-child`.
+- Treating `/checkout` as cart. Checkout in this starter is Stripe hosted return URLs, not the bag.
+
+**Content Editor / Pages (this is the one new authoring surface):**
+
+1. On the Navigation **rendering** (Feature Headless or Project copy), set **Parameters** to `CartPage=/cart` (or `/basket`). Publish. This CM does not show Parameters Template.
+2. The Cart page can sit anywhere under Home. It does not have to be the last nav link.
+3. Empty param still defaults to `/cart` in code.
+
+Do this as **Task 2.5 before Task 4**. Wrapping MiniCart around “the last link” would freeze the hack into the flyout.
 
 ### Decision D — Author-owned copy: dictionary first, fields optional
 
@@ -165,7 +257,7 @@ export interface CommerceCartItem {
 `toCommerceCartItems`:
 
 1. Keep today's productId / name / qty / price mapping.
-2. Run the shared `getImages(asRecord(row.Product?.xp))` helper (extract from `products/mapper.ts` so PDP and cart cannot drift).
+2. Run the shared `getProductImages` / `toProductHeroImage` helpers (`lib/commerce/products/images.ts`, extracted from the product mapper so PDP and cart cannot drift) on `asRecord(row.Product?.xp)`.
 3. Set `imageUrl` / `thumbnailUrl` the same way `toCommerceProduct` does.
 4. Map `row.Specs` to `{ specId, name, optionId, value }` using `Name`, `Value` or `OptionValue`. Drop entries with no specId.
 
@@ -193,61 +285,104 @@ Tests to add in `src/__tests__/cart.test.ts` (mapper-level; extract mapper tests
 
 1. **Mapper** — extract image helper, extend types, map specs, tests.
 2. **`CartLineRow` + cart page UI** — product row on `/cart` (and the Sitecore `ShoppingCart` wrapper, which just hosts the helper).
+2.5. **Cart nav identity** — `CartPage` on Navigation Parameters string; `getCartDestination`; partition by href/id; cart control sibling of the primary list. `isUtility` / last-item split removed. No MiniCart yet.
 3. **Context revision + `useCommerceCart`** — `AddToCart` mutations become visible elsewhere.
-4. **MiniCart** — wrap Navigation utility item; Layout fallback; count + flyout using the same helper.
+4. **MiniCart** — wrap the **cart-role** control from 2.5; Layout fallback; count + flyout using `CartLineRow` compact.
 5. **Author copy** — `dictionaryKeys`, `useTranslations` in the cart helper, English fallbacks.
 
-Do not start MiniCart before (3). A flyout that does not update after add is worse than no flyout.
+Do not start MiniCart before (2.5) and (3). A flyout on the last nav link, or a flyout that does not update after add, is worse than no flyout.
 
 ## Manual Content Editor Instructions
 
-### You do **not** create for this slice
+Do **not** create a cart-line template, a MiniCart rendering, Sitecore image fields for OrderCloud products, or a ShoppingCart datasource template.
 
-- A Sitecore template for cart line items.
-- A MiniCart rendering.
-- OrderCloud image fields in Sitecore (images live on the **product in OrderCloud**).
-- A ShoppingCart datasource template (unless we reopen Decision D).
+### Task 1 — Mapper (done)
 
-### You **should** verify / may already have
+**Nothing in Content Editor.** Thumbnails and specs are read from the OrderCloud line item (`Product.xp.Images`, `Specs`). There is no new Sitecore item to create, and no Pages change that would make this mapper visible.
 
-| Where | What | Why |
-|---|---|---|
-| **Pages / Content Editor — Header partial** | Last nav link is **Cart** → `/cart` (or the real cart page path). | MiniCart wraps that utility item. |
-| **Pages — Cart page** | Route name/path still matches `isCartRoute` (`cart` / `Shopping Cart`). Either drop `ShoppingCart` into `headless-main` **or** leave main empty and keep the Layout fallback. | Already how the page works. |
-| **OrderCloud portal (not Sitecore)** | Products you add to cart have `xp.Images` with `Url` (and `Thumbnailurl` if you want a smaller file). | Seed script already writes this. Catalog products authored only in Sitecore listing items will **not** show a cart thumbnail. |
-| **OrderCloud specs** | Specs already persist on the line item from `AddToCart`. Nothing to author for the row to show Size / Color / engraving. | Mapper was dropping them on read. |
+Optional OrderCloud-only check if a cart row has a name but no image:
 
-### You **must** create for author-owned copy (step 5)
+1. Open the **OrderCloud portal** (not Sitecore) → Products.
+2. Open a product you will add to the cart.
+3. Confirm `xp.Images` has at least one object with `Url`. Optional `Thumbnailurl` (smaller file) and `Primary: true` (hero). Demo seed often sets `Thumbnailurl` to the same value as `Url`.
+4. Do **not** put that image on a Sitecore `productThumbnail` field — cart rows never read it.
 
-This commerce site's Dictionary is loaded, but there are **no cart keys yet** (no `src/variables/dictionary.tsx` in this starter).
+### Task 2 — Cart product row UI (done)
 
-In **Content Editor** (not Pages — dictionary items are usually CE):
+Still no new template. Confirm the **Cart page** in Pages:
 
-1. Open the commerce site item → **Dictionary**.
-2. Create a folder, e.g. `Cart`.
-3. Create one dictionary item per key in Decision D. **Item name = key** (`CART_Heading`, `CART_EmptyTitle`, `CART_EmptyBody`, `CART_Checkout`, …). Phrase field = the visible string.
-4. If the site has `en-CA` (or others), add language versions. Missing keys silently fall back to the English hardcoded defaults in code.
+1. Open the commerce site in **Sitecore Pages**.
+2. Open the Cart page (item name/path contains `cart` or display name **Shopping Cart** — must match `isCartRoute`).
+3. If `headless-main` is empty, the Layout fallback already renders the cart — leave it, or drop the `ShoppingCart` rendering into `headless-main`.
+4. **No datasource** on `ShoppingCart`. If Pages asks you to pick one, cancel; this rendering is a leaf.
+5. Preview, add a product from a PDP, open `/cart`. You should see thumbnail + specs + a name link to `/products/{id}`. If the name shows but no image, check OrderCloud `xp.Images` — it is not a Sitecore field miss.
+6. If the name link 404s, the Products page still needs a **wildcard child** (`*`) with `ProductContainer` in last-url-segment mode. Creating `/products` alone is not enough for `/products/{id}`.
 
-Until those items exist, the UI still works; it just shows the defaults.
+### Task 2.5 — Cart nav identity (done)
 
-### Optional / only if something is missing in CM
+**What actually shipped in CM:** on the live Navigation rendering, **Parameters** = `CartPage=/cart`. This CE never showed Parameters Template (AddToCart / SpecForm included). A `Navigation Parameters` template exists under `Templates/Project/commerce/Rendering Parameters` but is unused.
+
+**Code:** `src/lib/commerce/cart/destination.ts`. Navigation reads `getCartDestination(params)` and `partitionNavigationItems`. Layout / AddToCart use `getCartDestinationFromRoute`.
+
+To change the bag URL later: edit that Parameters string (`CartPage=/basket`), publish, do not point at `/checkout`.
+
+### Task 3 — Shared cart snapshot (next session)
+
+**Nothing in Content Editor.** Wire `cartRevision` (or a snapshot) on `OrderCloudContext` so `addItem` / `updateItem` / `removeItem` refresh every cart surface. Extract `useCommerceCart()` for the cart page (and later the flyout). See Decision A.
+
+Do not build MiniCart in the same change set.
+
+### Task 4 — Mini-cart (not yet)
+
+1. In **Pages**, open the **header partial** (partial design that fills `headless-header`).
+2. Open the Navigation rendering.
+3. Confirm Navigation **Parameters** includes `CartPage=/cart` (or `/basket`). MiniCart wraps the matching nav item; labels/href stay authored on the page. Order among siblings does not matter.
+4. Do **not** add a MiniCart rendering to the placeholder. It is chrome in the Next app, not a placeable component.
+5. If Navigation is missing on the header entirely, add the `Navigation` rendering to `headless-header` (still no datasource template). Cart count will use a Layout fallback until a cart-role item exists.
+
+### Task 5 — Author-owned copy (not yet)
+
+Do this in **Content Editor**, not Pages. Dictionary items are under the site, not on the cart rendering.
+
+1. In Content Editor, expand the commerce **site item** → **Dictionary**.
+2. Insert a folder named `Cart` (right-click Dictionary → Insert → Folder, or the Dictionary folder insert option your site uses).
+3. Under `Cart`, insert one **Dictionary entry** per key. **Item name must match the key exactly** (this is what `next-intl` / `getDictionary` looks up):
+
+   | Item name | Phrase (en) |
+   |---|---|
+   | `CART_Heading` | Shopping Cart |
+   | `CART_EmptyTitle` | Your shopping cart is empty |
+   | `CART_EmptyBody` | Add a product, then come back here to check out. |
+   | `CART_Checkout` | Checkout |
+   | `CART_CheckoutStarting` | Starting checkout… |
+   | `CART_ViewCart` | View cart |
+   | `CART_ContinueShopping` | Continue shopping |
+   | `CART_Remove` | Remove |
+   | `CART_Loading` | Loading cart… |
+   | `CART_ItemCount_one` | `{count} item` |
+   | `CART_ItemCount_other` | `{count} items` |
+
+4. On each item, set the **Phrase** (or equivalent dictionary value field) to the English string above.
+5. If the site has `en-CA` (or other languages), switch language on each item and add a version with the translated Phrase. Missing languages fall back to the hardcoded English in code.
+6. Publish the Dictionary folder (or wait for Edge to pick it up). Until these items exist, the UI still runs on those English defaults.
+
+### If ShoppingCart / Navigation cannot be placed in this CM
 
 Serialized **commerce** module renderings today are `ProductContainer`, `ProductInfo`, `AddToCart`, `SpecForm`. `ShoppingCart` and `Navigation` are **not** under `authoring/items/commerce`. A `ShoppingCart` rendering exists under the older **click-click-launch** path (`componentName: ShoppingCart`, no datasource template).
 
-If the live **SitecoreAI - Commerce** site cannot place `ShoppingCart` or `Navigation`:
+Only if the live **SitecoreAI - Commerce** site cannot insert those renderings:
 
-1. Create JSON renderings under `/sitecore/layout/Renderings/Project/commerce/` with `componentName` matching the map (`ShoppingCart`, `Navigation`).
-2. **No datasource template** on either for this slice.
-3. Add them to the placeholder settings authors actually use (`headless-header`, `headless-main`).
-4. Put Navigation on the header partial; put ShoppingCart on the cart page *or* rely on Layout's empty-main fallback.
+1. In Content Editor, create JSON renderings under `/sitecore/layout/Renderings/Project/commerce/`.
+2. Set **componentName** to `ShoppingCart` and `Navigation` (must match the component map).
+3. Leave **Datasource Template** empty on both.
+4. Allow them on `headless-header` / `headless-main` in Placeholder Settings.
+5. Put Navigation on the header partial; put ShoppingCart on the cart page *or* rely on Layout's empty-main fallback.
 
-That is environment wiring, not part of the line-item mapper.
+### Do not create (any task in this slice)
 
-### Explicitly later (do not create now)
-
-- Promo code field, promotion datasource, or wiring `Promo` into the cart.
+- Promo code field, promotion datasource, or `Promo` on the cart.
 - Checkout identity / merge / shipping components.
-- `productDetailPage` on the cart (only if `/products/{id}` is wrong).
+- `productDetailPage` on the cart (only if `/products/{id}` is later wrong).
 
 ## 7. Success criteria
 

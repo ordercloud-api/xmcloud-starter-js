@@ -5,6 +5,7 @@ import SitecoreStyles from "components/content-sdk/SitecoreStyles";
 import { AppPlaceholder } from "@sitecore-content-sdk/nextjs";
 import HomeFeaturedProducts from "components/commerce/HomeFeaturedProducts";
 import ShoppingCart from "components/commerce/ShoppingCart";
+import { getCartDestinationFromRoute } from "src/lib/commerce/cart/destination";
 import {
   isCartRoute,
   isHomeRoute,
@@ -76,7 +77,7 @@ const Layout = ({ page }: LayoutProps): JSX.Element => {
                 )}
                 {route && isHomeRoute(route) && <HomeFeaturedProducts />}
                 {route &&
-                  isCartRoute(route) &&
+                  isCartRoute(route, getCartDestinationFromRoute(route)) &&
                   isPlaceholderEmpty(route, "headless-main") && <ShoppingCart />}
               </div>
             </main>
