@@ -36,13 +36,13 @@ See [templates-and-renderings.md](templates-and-renderings.md) for confirmed tem
 
 See [common-component-patterns.md](common-component-patterns.md) for two patterns used throughout the commerce components that are general `xmcloud-starter-js` conventions rather than commerce-specific: defensive datasource field access, and editor/authoring-safe states.
 
-Per-component specifications, one markdown file per component from the inventory (helpers grouped under their own subdirectory), live under [component-specs/](component-specs/index.md).
+Per-component specifications, one markdown file per component from the inventory (helpers grouped under their own subdirectory), live under [component-specs/](component-specs/index.md). How specs are archived and promoted: [README.md](README.md).
 
 ## Success Criteria
 
 - [x] Baseline spec documenting the existing MVP commerce components (template/rendering definitions, reusable patterns, conventions used) — see [templates-and-renderings.md](templates-and-renderings.md), [component-specs/index.md](component-specs/index.md), and [commerce-component-patterns.md](commerce-component-patterns.md)
 - [x] Per-component specifications — see [component-specs/](component-specs/index.md)
-- [ ] New component specifications defined on top of that baseline
+- [ ] New component specifications defined on top of that baseline — first draft: [component-specs/drafts/cart-row-minicart-copy.md](component-specs/drafts/cart-row-minicart-copy.md)
 
 ## System Interaction Diagram
 

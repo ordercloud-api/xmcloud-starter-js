@@ -39,10 +39,11 @@ Not for editing/reorganizing the already-finalized specs in `commerce-specs/comp
    - The official OrderCloud API reference at `https://ordercloud.io/api-reference` (fetch the specific resource page, e.g. Products, Specs, Orders, LineItems, Categories, Promotions, Buyers) to confirm field names, required/optional-ness, and available operations beyond what's already used in this codebase.
    - Call out any mismatch between the two explicitly in the draft rather than silently picking one.
 
-3. **Decide file placement** (paths from repo root):
+3. **Decide file placement** (paths from repo root). The archive layout and promote rules are in [commerce-specs/README.md](../../../examples/kit-nextjs-commerce-starter/commerce-specs/README.md).
    - New Sitecore-registered component → `examples/kit-nextjs-commerce-starter/commerce-specs/component-specs/drafts/<kebab-case-name>.md`.
    - New non-registered helper → `examples/kit-nextjs-commerce-starter/commerce-specs/component-specs/helpers/drafts/<kebab-case-name>.md`.
    - Component + helper together → create both, cross-linked the same way `spec-form.md` links to `helpers/product-spec-fields.md`.
+   - **Cross-cutting slice** (one unit of work that updates several existing surfaces, not a single new rendering) → still one file in `component-specs/drafts/<kebab-case-name>.md`. Do not create sibling folders such as `slices/` or `wip/`. On promote, fold the draft into the affected promoted specs and delete the draft (or split out a new helper file if one shipped).
    - Create the `drafts/` directory if it doesn't exist yet.
 
 4. **Write the draft** using [the template](./references/template.md) — match the structure and tone of existing specs (frontmatter, `> Part of ...` breadcrumb, Summary, Sitecore template/rendering, Manual Content Editor Instructions, Props/datasource shape, Behavior, Known gaps).
@@ -75,10 +76,10 @@ Only after the user explicitly confirms they've finished testing an executed dra
 
 If they confirm yes:
 
-1. Move the file: `drafts/<name>.md` → the parent folder (`component-specs/<name>.md`, or `component-specs/helpers/<name>.md` for a helper).
+1. Move the file: `drafts/<name>.md` → the parent folder (`component-specs/<name>.md`, or `component-specs/helpers/<name>.md` for a helper). If the draft was a **cross-cutting slice**, do not leave a sibling `slices/` file: fold the content into the promoted specs it changed, add any new helper files, then delete the draft.
 2. Fix the file's own relative links now that it's one directory shallower — e.g. a component draft's `[../index.md]` becomes `[index.md]`; a helper draft's `[../../index.md]` becomes `[../index.md]`, and `[../<component>.md]` becomes `[<component>.md]`. Re-check every link in the file, don't assume only the breadcrumb line needs it.
 3. Update the frontmatter `status` field to reflect the new state (e.g. `reviewed`, `implemented`) — ask the user what value their project uses if unclear; don't invent a status vocabulary.
-4. Update its row in [component-specs/index.md](../../../examples/kit-nextjs-commerce-starter/commerce-specs/component-specs/index.md): drop the `(draft)` label, keep the link pointing at the new path.
+4. Update its row in [component-specs/index.md](../../../examples/kit-nextjs-commerce-starter/commerce-specs/component-specs/index.md): drop the `(draft)` label, keep the link pointing at the new path. For a cross-cutting slice, remove the draft row and point inventory rows at the promoted specs you folded into.
 5. Still never touch `templates-and-renderings.md` at any point in this workflow — it's only updated via a live CM serialization pull, never hand-edited as part of drafting/executing/promoting a spec.
 
 ## Output

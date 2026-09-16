@@ -47,5 +47,6 @@ Apply all **When to use**, **How to perform**, and **Hard rules** from the [Repo
 ## Related
 
 - [This starter's README](README.md)
+- [Commerce specs archive](commerce-specs/README.md)
 - [Root README — How to run a starter locally](../../README.md#how-to-run-a-nextjs-starter-locally)
 - [Root README — Getting started guide](../../README.md#getting-started-guide)

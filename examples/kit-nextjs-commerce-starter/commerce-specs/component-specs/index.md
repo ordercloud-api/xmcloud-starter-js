@@ -29,3 +29,11 @@ Not independently registered in `.sitecore/component-map.ts` — consumed by the
 | `commerce/OrderCloudProductCard` | [helpers/order-cloud-product-card.md](helpers/order-cloud-product-card.md) |
 | `commerce/OrderCloudCart` | [helpers/order-cloud-cart.md](helpers/order-cloud-cart.md) |
 | `commerce/ProductSpecFields` | [helpers/product-spec-fields.md](helpers/product-spec-fields.md) |
+
+## Drafts
+
+Not yet implemented / not yet promoted. See [the archive README](../README.md).
+
+| Draft | Spec |
+|---|---|
+| Cart product row → header mini-cart → author copy `(draft)` | [drafts/cart-row-minicart-copy.md](drafts/cart-row-minicart-copy.md) |
