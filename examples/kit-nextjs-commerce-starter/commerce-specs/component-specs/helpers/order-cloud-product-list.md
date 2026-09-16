@@ -35,7 +35,7 @@ Client component that fetches and renders a grid of OrderCloud products, either 
 - If picker mode with no selected IDs: skip fetching entirely, show an empty/hint state (no network call).
 - If the OrderCloud session (`useOrderCloud().status`) isn't `"authenticated"` yet: shows loading or the session error, no product fetch attempted.
 - Otherwise fetches via `productsService.listByIds(ids, { signal })` (picker mode) or `productsService.list({ signal })` (catalog mode), both `AbortController`-scoped.
-- **10-second timeout** (`REQUEST_TIMEOUT_MS = 10_000`): a `window.setTimeout` aborts the controller if the request hasn't resolved; a `timedOut` flag distinguishes a timeout-abort from a user-triggered retry-abort (via `refreshSeed`) so the error message can be specific: `` `Product request timed out after 10s. Check proxy/auth and try again.` ``. If the abort was **not** a timeout (i.e. effect cleanup from a `refreshSeed` change or unmount), the catch silently returns without setting an error.
+- **10-second timeout** (`REQUEST_TIMEOUT_MS = 10_000`): a `window.setTimeout` aborts the controller if the request hasn't resolved; a `timedOut` flag distinguishes a timeout-abort from a user-triggered retry-abort (via `refreshSeed`) so the error message can be specific: `` `Product request timed out after 10s. Check OrderCloud env/auth and try again.` ``. If the abort was **not** a timeout (i.e. effect cleanup from a `refreshSeed` change or unmount), the catch silently returns without setting an error.
 - "Retry" button increments `refreshSeed`, which re-runs the effect (also used to eventually pick up a newly-authenticated session).
 
 ## Rendering states

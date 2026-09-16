@@ -115,7 +115,7 @@ export default function OrderCloudProductList({
         if (controller.signal.aborted && timedOut) {
           setProducts([]);
           setError(
-            `Product request timed out after ${Math.floor(REQUEST_TIMEOUT_MS / 1000)}s. Check proxy/auth and try again.`
+            `Product request timed out after ${Math.floor(REQUEST_TIMEOUT_MS / 1000)}s. Check OrderCloud env/auth and try again.`
           );
           return;
         }
