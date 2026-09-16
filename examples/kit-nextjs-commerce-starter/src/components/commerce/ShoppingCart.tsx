@@ -2,28 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import CartLineRow from '@/components/commerce/CartLineRow';
 import { useOrderCloud } from '@/contexts/OrderCloudContext';
+import { formatMoney } from '@/lib/commerce/cart/format';
 import type { CommerceCart } from '@/lib/commerce/cart/types';
 import { startHostedCheckout } from '@/lib/commerce/checkout/hosted';
 import { CHECKOUT_ORDER_ID_STORAGE_KEY } from '@/lib/commerce/checkout/status';
-
-const formatMoney = (amount?: number, currency?: string): string => {
-  if (typeof amount !== 'number' || !Number.isFinite(amount)) return '—';
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: 'currency',
-      currency: currency || 'USD',
-      maximumFractionDigits: 2,
-    }).format(amount);
-  } catch {
-    return amount.toFixed(2);
-  }
-};
-
-const lineTotal = (quantity: number, unitPrice?: number): number | undefined => {
-  if (typeof unitPrice !== 'number' || !Number.isFinite(unitPrice)) return undefined;
-  return quantity * unitPrice;
-};
+import { buildProductDetailHref } from '@/lib/commerce/products/href';
+import { CATALOG_LIST_HREF } from '@/lib/commerce/products/list-source';
 
 export default function ShoppingCart() {
   const { accessToken, cart, status, error: sessionError } = useOrderCloud();
@@ -147,53 +133,21 @@ export default function ShoppingCart() {
       {!loading && payload && payload.items.length > 0 && (
         <>
           <ul className="divide-y rounded-lg border">
-            {payload.items.map((item) => {
-              const busy = updatingId === item.id;
-              return (
-                <li key={item.id} className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-muted-foreground text-xs">
-                      {formatMoney(item.unitPrice, payload.currency)} each
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-between gap-4 sm:justify-end">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        aria-label={`Decrease quantity of ${item.name}`}
-                        onClick={() => void changeQuantity(item.id, item.quantity - 1)}
-                        disabled={busy || item.quantity <= 1}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-md border text-lg leading-none disabled:opacity-40"
-                      >
-                        −
-                      </button>
-                      <span className="min-w-8 text-center text-sm font-medium">{item.quantity}</span>
-                      <button
-                        type="button"
-                        aria-label={`Increase quantity of ${item.name}`}
-                        onClick={() => void changeQuantity(item.id, item.quantity + 1)}
-                        disabled={busy}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-md border text-lg leading-none disabled:opacity-40"
-                      >
-                        +
-                      </button>
-                    </div>
-                    <p className="min-w-20 text-right text-sm font-medium">
-                      {formatMoney(lineTotal(item.quantity, item.unitPrice), payload.currency)}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => void removeItem(item.id)}
-                      disabled={busy}
-                      className="text-muted-foreground text-xs font-semibold underline disabled:opacity-40"
-                    >
-                      {busy ? 'Updating…' : 'Remove'}
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
+            {payload.items.map((item) => (
+              <CartLineRow
+                key={item.id}
+                item={item}
+                currency={payload.currency}
+                href={buildProductDetailHref(CATALOG_LIST_HREF, item.productId)}
+                busy={updatingId === item.id}
+                onChangeQuantity={(lineItemId, quantity) => {
+                  void changeQuantity(lineItemId, quantity);
+                }}
+                onRemove={(lineItemId) => {
+                  void removeItem(lineItemId);
+                }}
+              />
+            ))}
           </ul>
 
           <div className="ml-auto w-full max-w-sm space-y-2">
