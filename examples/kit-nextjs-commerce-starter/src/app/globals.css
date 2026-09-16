@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "../assets/components/navigation.css";
-@import "../assets/components/product-detail.css";
 @import "../assets/components/content-well.css";
 
 @theme inline {

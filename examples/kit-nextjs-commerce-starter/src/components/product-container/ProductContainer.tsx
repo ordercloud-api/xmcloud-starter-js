@@ -83,7 +83,7 @@ export const Default: React.FC<ProductContainerProps> = ({
         previewProduct={previewProduct}
         isAuthoring={isAuthoring}
       >
-        <div className={isAuthoring ? "space-y-6" : "product-detail-grid"}>
+        <div className="space-y-6">
           <AppPlaceholder
             name={placeholderName}
             rendering={rendering}

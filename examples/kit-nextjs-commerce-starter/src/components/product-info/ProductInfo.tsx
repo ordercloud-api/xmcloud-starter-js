@@ -35,16 +35,13 @@ export const Default: React.FC<ComponentProps> = ({ params, page }) => {
   ) {
     return (
       <div
-        className={`animate-pulse ${params.styles ?? ""}`}
+        className={`grid animate-pulse gap-8 md:grid-cols-2 ${params.styles ?? ""}`}
         id={params.RenderingIdentifier}
         aria-live="polite"
         data-component="ProductInfo"
       >
-        <div
-          data-slot="product-media"
-          className="aspect-square rounded-2xl bg-slate-100"
-        />
-        <div className="space-y-4 py-2" data-slot="product-summary">
+        <div className="aspect-square rounded-2xl bg-slate-100" />
+        <div className="space-y-4 py-2">
           <div className="h-4 w-24 rounded bg-slate-100" />
           <div className="h-10 w-3/4 rounded bg-slate-100" />
           <div className="h-7 w-1/3 rounded bg-slate-100" />
@@ -77,11 +74,7 @@ export const Default: React.FC<ComponentProps> = ({ params, page }) => {
 
   return (
     <article
-      className={
-        isAuthoring
-          ? `grid gap-8 md:grid-cols-2 ${params.styles ?? ""}`
-          : params.styles ?? ""
-      }
+      className={`grid gap-8 md:grid-cols-2 ${params.styles ?? ""}`}
       id={params.RenderingIdentifier}
       data-component="ProductInfo"
     >
@@ -90,7 +83,7 @@ export const Default: React.FC<ComponentProps> = ({ params, page }) => {
         productName={product.name}
         isAuthoring={isAuthoring}
       />
-      <div className="flex flex-col gap-5" data-slot="product-summary">
+      <div className="flex flex-col gap-5">
         {eyebrow && (
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">
             {eyebrow}
