@@ -3,7 +3,7 @@
 set -euo pipefail
 
 APP_URL="${APP_URL:-http://127.0.0.1:3000}"
-PROXY_URL="${PROXY_URL:-http://127.0.0.1:8795}"
+OC_API_URL="${OC_API_URL:-https://sandboxapi.ordercloud.io}"
 
 title() {
   printf '\n== %s ==\n' "$1"
@@ -15,19 +15,11 @@ status_only() {
 
 title "Inputs"
 echo "APP_URL=$APP_URL"
-echo "PROXY_URL=$PROXY_URL"
-
-title "Proxy Health"
-echo "proxy_health_status=$(status_only "$PROXY_URL/health" || true)"
+echo "OC_API_URL=$OC_API_URL"
 
 title "Storefront"
 echo "app_status=$(status_only "$APP_URL" || true)"
-
-title "Browser CORS Preflight"
-curl -sS -i -X OPTIONS "$PROXY_URL/oc/oauth/token" \
-  -H "Origin: $APP_URL" \
-  -H "Access-Control-Request-Method: POST" \
-  -H "Access-Control-Request-Headers: content-type" | sed -n '1,20p'
+echo "diagnostics_status=$(status_only "$APP_URL/test" || true)"
 
 title "Next Step"
-echo "Open $APP_URL and verify OAuth, product, and cart requests target $PROXY_URL/oc directly."
+echo "Open $APP_URL/test and verify anonymous auth, products, and cart target $OC_API_URL directly."

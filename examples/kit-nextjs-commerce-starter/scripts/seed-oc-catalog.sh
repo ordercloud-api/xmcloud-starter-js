@@ -11,7 +11,7 @@ DRY_RUN="${DRY_RUN:-0}"
 
 if [[ -z "${TOKEN:-}" ]]; then
   echo "Missing TOKEN."
-  echo "Example: TOKEN=\"\$(/Users/ersi/Devtop/sitecore.ep.proxy.oc-storefront/get-oc-token.sh)\" bash scripts/seed-oc-catalog.sh"
+  echo "Example: TOKEN=\"<ordercloud-client-credentials-token>\" bash scripts/seed-oc-catalog.sh"
   exit 1
 fi
 
