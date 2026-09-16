@@ -1,5 +1,9 @@
 import { Cart, type LineItem } from "ordercloud-javascript-sdk";
-import { configureOrderCloudSdk, type CommerceRequest } from "../client";
+import {
+  configureOrderCloudSdk,
+  runOrderCloudOperation,
+  type CommerceRequest,
+} from "../client";
 import { toCommerceCart, type OrderCloudCart } from "./mapper";
 import type {
   AddCartItemInput,
@@ -10,7 +14,7 @@ import type {
 const createCartService = (shopperToken: string): CartService => {
   configureOrderCloudSdk();
   return new CartService((operation) =>
-    operation({ accessToken: shopperToken }),
+    runOrderCloudOperation(operation, { accessToken: shopperToken }),
   );
 };
 

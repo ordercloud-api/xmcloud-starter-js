@@ -13,6 +13,7 @@ import {
   configureOrderCloudSdk,
   hasOrderCloudStatus,
   requestAnonymousOrderCloudToken,
+  runOrderCloudOperation,
   type CommerceRequest,
   type CommerceRequestOptions,
 } from '@/lib/commerce/client';
@@ -128,7 +129,7 @@ export function OrderCloudProvider({ children }: { children: React.ReactNode }) 
       tokenRef.current = token;
 
       try {
-        return await operation({ accessToken: token.accessToken });
+        return await runOrderCloudOperation(operation, { accessToken: token.accessToken });
       } catch (requestError) {
         if (!hasOrderCloudStatus(requestError, 401)) {
           throw requestError;
@@ -144,7 +145,7 @@ export function OrderCloudProvider({ children }: { children: React.ReactNode }) 
         }
 
         try {
-          return await operation({ accessToken: token.accessToken });
+          return await runOrderCloudOperation(operation, { accessToken: token.accessToken });
         } catch (retryError) {
           if (hasOrderCloudStatus(retryError, 401)) {
             throw setAuthenticationError(retryError);

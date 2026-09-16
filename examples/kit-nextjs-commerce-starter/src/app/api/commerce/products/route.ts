@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requestAnonymousOrderCloudToken } from "@/lib/commerce/client";
+import {
+  requestAnonymousOrderCloudToken,
+  runOrderCloudOperation,
+} from "@/lib/commerce/client";
 import { ProductsService } from "@/lib/commerce/products/service";
 import type { CommerceProductList } from "@/lib/commerce/products/types";
 
@@ -22,7 +25,7 @@ export async function GET(
         ? Math.min(requestedPageSize, 50)
         : 20;
     const products = new ProductsService((operation) =>
-      operation({ accessToken }),
+      runOrderCloudOperation(operation, { accessToken }),
     );
     return NextResponse.json(await products.list({ search, page, pageSize }));
   } catch (error) {
