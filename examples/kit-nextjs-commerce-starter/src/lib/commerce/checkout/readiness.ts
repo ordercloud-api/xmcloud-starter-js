@@ -19,11 +19,8 @@ const isUsable = (value: string): boolean =>
   Boolean(value) && !value.includes("<") && !value.includes(">");
 
 const resolvedBuyerClientId = (): string => {
-  const serverClientId = read("ORDERCLOUD_BUYER_CLIENT_ID");
-  if (isUsable(serverClientId)) return serverClientId;
   const publicClientId = read("NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID");
-  if (isUsable(publicClientId)) return publicClientId;
-  return "";
+  return isUsable(publicClientId) ? publicClientId : "";
 };
 
 const readVaultState = (
@@ -69,7 +66,7 @@ export const getCheckoutReadiness = (): CheckoutReadinessReport => {
   }
   if (!checks.orderCloudBuyerClientId) {
     notes.push(
-      "Shopper auth needs ORDERCLOUD_BUYER_CLIENT_ID or NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID.",
+      "Shopper auth needs NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID.",
     );
   }
 

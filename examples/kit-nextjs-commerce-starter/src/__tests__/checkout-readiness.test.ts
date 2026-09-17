@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it } from "vitest";
 import { getCheckoutReadiness } from "../lib/commerce/checkout/readiness";
 
 const originalVault = process.env.CHECKOUT_STRIPE_VAULT_JSON;
-const originalBuyerClientId = process.env.ORDERCLOUD_BUYER_CLIENT_ID;
 const originalPublicClientId = process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID;
 const originalMiddlewareId = process.env.ORDERCLOUD_MIDDLEWARE_CLIENT_ID;
 const originalMiddlewareSecret = process.env.ORDERCLOUD_MIDDLEWARE_CLIENT_SECRET;
@@ -25,7 +24,6 @@ const restore = (name: string, value: string | undefined): void => {
 
 afterEach(() => {
   restore("CHECKOUT_STRIPE_VAULT_JSON", originalVault);
-  restore("ORDERCLOUD_BUYER_CLIENT_ID", originalBuyerClientId);
   restore("NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID", originalPublicClientId);
   restore("ORDERCLOUD_MIDDLEWARE_CLIENT_ID", originalMiddlewareId);
   restore("ORDERCLOUD_MIDDLEWARE_CLIENT_SECRET", originalMiddlewareSecret);
@@ -37,7 +35,7 @@ afterEach(() => {
 describe("getCheckoutReadiness", () => {
   it("is ready when the vault has credentials for the buyer client", () => {
     process.env.CHECKOUT_STRIPE_VAULT_JSON = sampleVault;
-    process.env.ORDERCLOUD_BUYER_CLIENT_ID = "buyer-client-id";
+    process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID = "buyer-client-id";
     process.env.ORDERCLOUD_MIDDLEWARE_CLIENT_ID = "middleware-id";
     process.env.ORDERCLOUD_MIDDLEWARE_CLIENT_SECRET = "middleware-secret";
 
@@ -57,7 +55,7 @@ describe("getCheckoutReadiness", () => {
 
   it("warns when the vault is missing the buyer client", () => {
     process.env.CHECKOUT_STRIPE_VAULT_JSON = sampleVault;
-    process.env.ORDERCLOUD_BUYER_CLIENT_ID = "other-client";
+    process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID = "other-client";
     delete process.env.ORDERCLOUD_MIDDLEWARE_CLIENT_ID;
     delete process.env.ORDERCLOUD_MIDDLEWARE_CLIENT_SECRET;
 
@@ -76,7 +74,7 @@ describe("getCheckoutReadiness", () => {
 
   it("is still ready without middleware credentials", () => {
     process.env.CHECKOUT_STRIPE_VAULT_JSON = sampleVault;
-    process.env.ORDERCLOUD_BUYER_CLIENT_ID = "buyer-client-id";
+    process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID = "buyer-client-id";
     delete process.env.ORDERCLOUD_MIDDLEWARE_CLIENT_ID;
     delete process.env.ORDERCLOUD_MIDDLEWARE_CLIENT_SECRET;
 
