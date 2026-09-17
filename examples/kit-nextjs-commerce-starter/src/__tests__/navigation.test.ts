@@ -4,6 +4,8 @@ import {
   flattenNavigationItems,
   getNavigationItems,
   isFlatNavigation,
+  navigationLogoPlaceholderName,
+  navigationRightPlaceholderName,
 } from "../components/navigation/navigation.utils";
 
 const link = (
@@ -54,5 +56,17 @@ describe("isFlatNavigation", () => {
     expect(isFlatNavigation("1")).toBe(true);
     expect(isFlatNavigation("")).toBe(false);
     expect(isFlatNavigation(undefined)).toBe(false);
+  });
+});
+
+describe("navigation placeholder names", () => {
+  it("uses DynamicPlaceholderId when present", () => {
+    expect(navigationLogoPlaceholderName("3")).toBe("navigation-logo-3");
+    expect(navigationRightPlaceholderName("3")).toBe("navigation-right-3");
+  });
+
+  it("falls back to 0 when the id is missing or blank", () => {
+    expect(navigationLogoPlaceholderName()).toBe("navigation-logo-0");
+    expect(navigationRightPlaceholderName("  ")).toBe("navigation-right-0");
   });
 });
