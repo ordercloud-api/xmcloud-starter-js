@@ -23,6 +23,7 @@ import * as LinkList from 'src/components/link-list/LinkList';
 import * as Image from 'src/components/image/Image';
 import * as Container from 'src/components/container/Container';
 import * as ColumnSplitter from 'src/components/column-splitter/ColumnSplitter';
+import * as CartButton from 'src/components/cart-button/CartButton';
 import * as AddToCart from 'src/components/add-to-cart/AddToCart';
 
 export const componentMap = new Map<string, NextjsContentSdkComponent>([
@@ -46,6 +47,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['Image', { ...Image }],
   ['Container', { ...Container }],
   ['ColumnSplitter', { ...ColumnSplitter }],
+  ['CartButton', { ...CartButton }],
   ['AddToCart', { ...AddToCart, componentType: 'client' }],
 ]);
 
