@@ -73,6 +73,7 @@
     "sitecore-tools:generate-map:watch": "sitecore-tools project component generate-map --watch",
     "sitecore-tools:build": "sitecore-tools project build",
     "commerce:check": "bash scripts/check-commerce-flow.sh",
+    "commerce:seed": "node scripts/seed-oc-catalog.mjs",
     "commerce:up": "bash scripts/up-commerce-flow.sh",
     "dev": "cross-env NODE_ENV=development npm-run-all --serial sitecore-tools:generate-map sitecore-tools:build --parallel next:dev sitecore-tools:generate-map:watch",
     "start": "cross-env-shell NODE_ENV=production npm-run-all --serial build next:start"
