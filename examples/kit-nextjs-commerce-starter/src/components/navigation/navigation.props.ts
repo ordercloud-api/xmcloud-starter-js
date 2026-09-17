@@ -14,4 +14,8 @@ export interface NavigationLinkFields {
 
 export type NavigationProps = ComponentProps & {
   fields?: Record<string, NavigationLinkFields>;
+  params: ComponentProps["params"] & {
+    DynamicPlaceholderId?: string;
+    Flattened?: string;
+  };
 };
