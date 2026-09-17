@@ -1,6 +1,7 @@
 import { Cart, type LineItem } from "ordercloud-javascript-sdk";
 import {
   configureOrderCloudSdk,
+  hasOrderCloudStatus,
   runOrderCloudOperation,
   type CommerceRequest,
 } from "../client";
@@ -48,9 +49,18 @@ export class CartService {
       Quantity: input.quantity,
       ...(input.specs?.length ? { Specs: input.specs } : {}),
     } satisfies LineItem;
-    await this.request((requestOptions) =>
-      Cart.CreateLineItem(lineItem, requestOptions),
-    );
+
+    try {
+      await this.request((requestOptions) => Cart.CreateLineItem(lineItem, requestOptions));
+    } catch (error) {
+      if (!hasOrderCloudStatus(error, 409)) throw error;
+      try {
+        await this.request((requestOptions) => Cart.Delete(requestOptions));
+      } catch {
+        // No cart to delete, or it was already submitted.
+      }
+      await this.request((requestOptions) => Cart.CreateLineItem(lineItem, requestOptions));
+    }
   }
 
   async updateItem(input: UpdateCartItemInput): Promise<void> {

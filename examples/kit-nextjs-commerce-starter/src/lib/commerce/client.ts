@@ -12,8 +12,12 @@ export type CommerceRequest = <T>(
   operation: (options: CommerceRequestOptions) => Promise<T>
 ) => Promise<T>;
 
-export const hasOrderCloudStatus = (error: unknown, status: number): boolean =>
-  error instanceof OrderCloudError && error.status === status;
+export const hasOrderCloudStatus = (error: unknown, status: number): boolean => {
+  if (!error || typeof error !== 'object') return false;
+  const candidate = error as { status?: unknown; isOrderCloudError?: unknown };
+  if (candidate.status !== status) return false;
+  return error instanceof OrderCloudError || candidate.isOrderCloudError === true;
+};
 
 export const configureOrderCloudSdk = (): void => {
   Configuration.Set({

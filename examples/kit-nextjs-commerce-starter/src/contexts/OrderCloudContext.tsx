@@ -32,6 +32,7 @@ export interface OrderCloudContextValue extends OrderCloudServices {
   isAuthenticated: boolean;
   accessToken: string | null;
   error: Error | null;
+  startFreshAnonymousSession: () => Promise<void>;
 }
 
 const OrderCloudContext = createContext<OrderCloudContextValue | undefined>(undefined);
@@ -123,6 +124,13 @@ export function OrderCloudProvider({ children }: { children: React.ReactNode }) 
     };
   }, [setAuthenticated, setAuthenticationError]);
 
+  const startFreshAnonymousSession = useCallback(async () => {
+    clearStoredOrderCloudToken();
+    tokenRef.current = null;
+    const token = await authenticateAnonymous(true);
+    setAuthenticated(token);
+  }, [setAuthenticated]);
+
   const request = useCallback<CommerceRequest>(
     async <T,>(operation: (options: CommerceRequestOptions) => Promise<T>): Promise<T> => {
       let token = tokenRef.current ?? (await authenticateAnonymous());
@@ -165,6 +173,7 @@ export function OrderCloudProvider({ children }: { children: React.ReactNode }) 
         isAuthenticated: status === 'authenticated',
         accessToken: storedToken?.accessToken ?? null,
         error,
+        startFreshAnonymousSession,
         ...services,
       }}
     >

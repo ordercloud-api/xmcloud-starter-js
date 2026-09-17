@@ -5,6 +5,7 @@ import type React from "react";
 import Link from "next/link";
 import type { ComponentProps } from "@/lib/component-props";
 import { useOrderCloud } from "@/contexts/OrderCloudContext";
+import { hasOrderCloudStatus } from "@/lib/commerce/client";
 import { useProductContext } from "@/contexts/ProductDataContext";
 import { getCartDestinationFromRoute } from "@/lib/commerce/cart/destination";
 import {
@@ -16,7 +17,7 @@ type SubmissionStatus = "idle" | "adding" | "added" | "error";
 
 export const Default: React.FC<ComponentProps> = ({ params, page }) => {
   const productData = useProductContext();
-  const { cart } = useOrderCloud();
+  const { cart, startFreshAnonymousSession } = useOrderCloud();
   const isAuthoring = page.mode.isEditing || page.mode.isDesignLibrary;
   const cartHref = getCartDestinationFromRoute(
     page.layout?.sitecore?.route,
@@ -74,11 +75,21 @@ export const Default: React.FC<ComponentProps> = ({ params, page }) => {
     setSubmissionStatus("adding");
     setSubmissionMessage(null);
     try {
-      await cart.addItem({
-        productId,
-        quantity: normalizedQuantity,
-        specs: toLineItemSpecs(productData.specs, productData.selections),
-      });
+      try {
+        await cart.addItem({
+          productId,
+          quantity: normalizedQuantity,
+          specs: toLineItemSpecs(productData.specs, productData.selections),
+        });
+      } catch (error) {
+        if (!hasOrderCloudStatus(error, 409)) throw error;
+        await startFreshAnonymousSession();
+        await cart.addItem({
+          productId,
+          quantity: normalizedQuantity,
+          specs: toLineItemSpecs(productData.specs, productData.selections),
+        });
+      }
       setSubmissionStatus("added");
       setSubmissionMessage("Added to cart");
     } catch (error) {

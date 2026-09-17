@@ -1,12 +1,17 @@
-import { describe, expect, it, vi } from "vitest";
-import { Cart } from "ordercloud-javascript-sdk";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { Cart, OrderCloudError } from "ordercloud-javascript-sdk";
 import type { CommerceRequest } from "../lib/commerce/client";
 import { CartService } from "../lib/commerce/cart/service";
 
+const request: CommerceRequest = (operation) =>
+  operation({ accessToken: "test-token" });
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe("CartService", () => {
   it("loads and normalizes the active cart and its line items together", async () => {
-    const request: CommerceRequest = (operation) =>
-      operation({ accessToken: "test-token" });
     vi.spyOn(Cart, "Get").mockResolvedValue({
       ID: "cart-1",
       Status: "Unsubmitted",
@@ -49,8 +54,6 @@ describe("CartService", () => {
   });
 
   it("includes selected specs when adding a product", async () => {
-    const request: CommerceRequest = (operation) =>
-      operation({ accessToken: "test-token" });
     const createLineItem = vi
       .spyOn(Cart, "CreateLineItem")
       .mockResolvedValue({} as never);
@@ -78,9 +81,30 @@ describe("CartService", () => {
     );
   });
 
+  it("deletes a leftover cart and retries add after a 409", async () => {
+    const conflict = new OrderCloudError({
+      response: {
+        status: 409,
+        statusText: "Conflict",
+        data: {
+          Errors: [{ ErrorCode: "ObjectExists", Message: "Object already exists" }],
+        },
+      },
+    });
+    const createLineItem = vi
+      .spyOn(Cart, "CreateLineItem")
+      .mockRejectedValueOnce(conflict)
+      .mockResolvedValue({} as never);
+    const removeCart = vi.spyOn(Cart, "Delete").mockResolvedValue(undefined as never);
+    const service = new CartService(request);
+
+    await service.addItem({ productId: "SKU-123", quantity: 1 });
+
+    expect(removeCart).toHaveBeenCalledWith({ accessToken: "test-token" });
+    expect(createLineItem).toHaveBeenCalledTimes(2);
+  });
+
   it("marks checkout as pending on the unsubmitted cart", async () => {
-    const request: CommerceRequest = (operation) =>
-      operation({ accessToken: "test-token" });
     const patch = vi.spyOn(Cart, "Patch").mockResolvedValue({} as never);
     const service = new CartService(request);
 
