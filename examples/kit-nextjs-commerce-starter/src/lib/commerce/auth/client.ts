@@ -1,4 +1,5 @@
 import 'server-only';
+import { Auth, Configuration, type ApiRole } from 'ordercloud-javascript-sdk';
 import { commerceAuthConfig } from './config';
 
 type RequestOptions = {
@@ -39,26 +40,35 @@ const asMessage = (body: unknown, fallback: string): string => {
   return fallback;
 };
 
-export const orderCloudTokenRequest = async <T>(params: URLSearchParams): Promise<T> => {
-  const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
-  const tokenParams = new URLSearchParams(params);
-  if (!tokenParams.get('client_id')) {
-    tokenParams.set('client_id', commerceAuthConfig.buyerClientId);
+const configureServerSdk = (): void => {
+  Configuration.Set({ baseApiUrl: commerceAuthConfig.baseApiUrl });
+};
+
+export const requestMiddlewareOrderCloudToken = async (): Promise<{
+  accessToken: string;
+  expiresIn: number;
+}> => {
+  if (!commerceAuthConfig.middlewareClientId || !commerceAuthConfig.middlewareClientSecret) {
+    throw new Error(
+      'Missing ORDERCLOUD_MIDDLEWARE_CLIENT_ID / ORDERCLOUD_MIDDLEWARE_CLIENT_SECRET for gateway order fulfillment'
+    );
   }
 
-  const response = await fetch(`${commerceAuthConfig.baseApiUrl}/oauth/token`, {
-    method: 'POST',
-    headers,
-    body: tokenParams.toString(),
-    cache: 'no-store',
-  });
-
-  const body = await parseBody(response);
-  if (!response.ok) {
-    throw new Error(asMessage(body, `OrderCloud token request failed with status ${response.status}`));
+  configureServerSdk();
+  const scope = commerceAuthConfig.middlewareScope.split(/\s+/).filter(Boolean) as ApiRole[];
+  const response = await Auth.ClientCredentials(
+    commerceAuthConfig.middlewareClientSecret,
+    commerceAuthConfig.middlewareClientId,
+    scope.length ? scope : undefined
+  );
+  if (!response.access_token || !response.expires_in) {
+    throw new Error('OrderCloud token response did not include an access token');
   }
 
-  return body as T;
+  return {
+    accessToken: response.access_token,
+    expiresIn: response.expires_in,
+  };
 };
 
 export const orderCloudRequest = async <T>(

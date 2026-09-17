@@ -1,8 +1,7 @@
 import "server-only";
 import type Stripe from "stripe";
-import type { AccessToken, ListPage, Order, Payment } from "ordercloud-javascript-sdk";
-import { orderCloudRequest, orderCloudTokenRequest } from "@/lib/commerce/auth/client";
-import { commerceAuthConfig } from "@/lib/commerce/auth/config";
+import type { ListPage, Order, Payment } from "ordercloud-javascript-sdk";
+import { orderCloudRequest, requestMiddlewareOrderCloudToken } from "@/lib/commerce/auth/client";
 import {
   isTerminalCheckoutStatus,
   type GatewayCheckoutStatus,
@@ -26,26 +25,10 @@ const getMiddlewareToken = async (): Promise<string> => {
     return cachedMiddlewareToken.token;
   }
 
-  if (!commerceAuthConfig.middlewareClientId || !commerceAuthConfig.middlewareClientSecret) {
-    throw new Error(
-      "Missing ORDERCLOUD_MIDDLEWARE_CLIENT_ID / ORDERCLOUD_MIDDLEWARE_CLIENT_SECRET for gateway order fulfillment",
-    );
-  }
-
-  const params = new URLSearchParams();
-  params.set("grant_type", "client_credentials");
-  params.set("client_id", commerceAuthConfig.middlewareClientId);
-  params.set("client_secret", commerceAuthConfig.middlewareClientSecret);
-  params.set("scope", commerceAuthConfig.middlewareScope);
-
-  const token = await orderCloudTokenRequest<AccessToken>(params);
-  if (!token.access_token || !token.expires_in) {
-    throw new Error("OrderCloud token response did not include an access token");
-  }
-
+  const tokenResponse = await requestMiddlewareOrderCloudToken();
   cachedMiddlewareToken = {
-    token: token.access_token,
-    expiresAt: Date.now() + token.expires_in * 1000,
+    token: tokenResponse.accessToken,
+    expiresAt: Date.now() + tokenResponse.expiresIn * 1000,
   };
   return cachedMiddlewareToken.token;
 };

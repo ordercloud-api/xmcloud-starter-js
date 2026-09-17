@@ -3,22 +3,14 @@ import type Stripe from "stripe";
 
 vi.mock("../lib/commerce/auth/client", () => ({
   orderCloudRequest: vi.fn(),
-  orderCloudTokenRequest: vi.fn(),
+  requestMiddlewareOrderCloudToken: vi.fn(),
 }));
 
-vi.mock("../lib/commerce/auth/config", () => ({
-  commerceAuthConfig: {
-    middlewareClientId: "middleware-id",
-    middlewareClientSecret: "middleware-secret",
-    middlewareScope: "OrderAdmin",
-  },
-}));
-
-import { orderCloudRequest, orderCloudTokenRequest } from "../lib/commerce/auth/client";
+import { orderCloudRequest, requestMiddlewareOrderCloudToken } from "../lib/commerce/auth/client";
 import { completeIncomingCheckout } from "../lib/commerce/checkout/incoming";
 
 const requestMock = vi.mocked(orderCloudRequest);
-const tokenMock = vi.mocked(orderCloudTokenRequest);
+const tokenMock = vi.mocked(requestMiddlewareOrderCloudToken);
 
 const session = {
   id: "cs_test_123",
@@ -33,7 +25,7 @@ const session = {
 describe("completeIncomingCheckout", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    tokenMock.mockResolvedValue({ access_token: "mw-token", expires_in: 3600 });
+    tokenMock.mockResolvedValue({ accessToken: "mw-token", expiresIn: 3600 });
   });
 
   it("no-ops when Incoming xp.CheckoutStatus is already terminal", async () => {
