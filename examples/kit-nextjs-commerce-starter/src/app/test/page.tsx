@@ -38,12 +38,6 @@ const CHECKS: EndpointCheck[] = [
     method: 'GET',
     path: '/api/commerce/checkout/readiness',
   },
-  {
-    key: 'anonymous',
-    label: 'Anonymous shopper token',
-    method: 'POST',
-    path: '/api/commerce/auth/anonymous',
-  },
 ];
 
 const initialResults = (): Record<string, EndpointCheckResult> =>
@@ -212,7 +206,7 @@ export default function CommerceDiagnosticsPage() {
       </p>
       <h1 className="text-4xl font-semibold">Diagnostics</h1>
       <p className="text-muted-foreground text-sm">
-        Checks environment, shopper auth, and checkout configuration. Use{' '}
+        Checks environment and checkout configuration. Use{' '}
         <Link className="underline" href="/products">
           /products
         </Link>{' '}
