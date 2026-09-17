@@ -41,7 +41,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['ProductContainer', { ...ProductContainer }],
   ['PartialDesignDynamicPlaceholder', { ...PartialDesignDynamicPlaceholder }],
   ['PageContent', { ...PageContent }],
-  ['Navigation', { ...Navigation, componentType: 'client' }],
+  ['Navigation', { ...Navigation }],
   ['LinkList', { ...LinkList }],
   ['Image', { ...Image }],
   ['Container', { ...Container }],
