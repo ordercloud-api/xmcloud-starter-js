@@ -2,6 +2,7 @@ import "server-only";
 import type Stripe from "stripe";
 import type { ListPage, Order, Payment } from "ordercloud-javascript-sdk";
 import { orderCloudRequest, requestMiddlewareOrderCloudToken } from "@/lib/commerce/auth/client";
+import { isMiddlewareConfigured } from "@/lib/commerce/auth/config";
 import {
   isTerminalCheckoutStatus,
   type GatewayCheckoutStatus,
@@ -91,10 +92,14 @@ const createIncomingPayment = async (
 
 export const completeIncomingCheckout = async (
   session: Stripe.Checkout.Session,
-): Promise<{ orderId: string; idempotent: boolean }> => {
+): Promise<{ orderId: string; idempotent: boolean; skipped?: boolean }> => {
   const orderId = session.metadata?.OrderID?.trim();
   if (!orderId) {
     throw new Error("Event session is missing metadata.OrderID");
+  }
+
+  if (!isMiddlewareConfigured()) {
+    return { orderId, idempotent: false, skipped: true };
   }
 
   const token = await getMiddlewareToken();

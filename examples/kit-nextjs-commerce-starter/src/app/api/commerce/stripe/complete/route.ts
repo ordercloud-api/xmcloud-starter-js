@@ -3,9 +3,16 @@ import type Stripe from "stripe";
 import { completeIncomingCheckout } from "@/lib/commerce/checkout/incoming";
 import { getStripeClientForApiKey } from "@/lib/commerce/checkout/stripe-client";
 import { getStripeCredentialsForClientId } from "@/lib/commerce/checkout/vault";
-import { readClientIdFromRawEvent } from "@/lib/commerce/checkout/webhook-event";
+import {
+  isCheckoutSessionEventType,
+  readClientIdFromRawEvent,
+  readEventTypeFromRawEvent,
+} from "@/lib/commerce/checkout/webhook-event";
 
 export const dynamic = "force-dynamic";
+
+const ignored = (reason: string): NextResponse =>
+  NextResponse.json({ received: true, ignored: true, reason });
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const signature = request.headers.get("stripe-signature");
@@ -14,9 +21,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const rawBody = Buffer.from(await request.arrayBuffer());
-  const clientId = readClientIdFromRawEvent(rawBody.toString("utf8"));
+  const rawText = rawBody.toString("utf8");
+  const eventType = readEventTypeFromRawEvent(rawText);
+  if (!isCheckoutSessionEventType(eventType)) {
+    return ignored(eventType ? `Unhandled event type ${eventType}` : "Missing event type");
+  }
+
+  const clientId = readClientIdFromRawEvent(rawText);
   if (!clientId) {
-    return NextResponse.json({ error: "Event payload is missing metadata.ClientID" }, { status: 400 });
+    return ignored("Checkout session is missing metadata.ClientID");
   }
 
   let credentials;
@@ -41,10 +54,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
-  if (!event.type.startsWith("checkout.session.")) {
-    return NextResponse.json({ received: true });
-  }
-
   const session = event.data.object as Stripe.Checkout.Session;
   const verifiedClientId = session.metadata?.ClientID?.trim();
   if (!verifiedClientId || verifiedClientId.toLowerCase() !== clientId.toLowerCase()) {
@@ -56,6 +65,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   try {
     const result = await completeIncomingCheckout(session);
+    if (result.skipped) {
+      console.warn(
+        "[stripe/complete] Acknowledged checkout.session event without Incoming pay/submit; ORDERCLOUD_MIDDLEWARE_CLIENT_ID / ORDERCLOUD_MIDDLEWARE_CLIENT_SECRET are not set",
+      );
+    }
     return NextResponse.json({ received: true, ...result });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Fulfillment failed";

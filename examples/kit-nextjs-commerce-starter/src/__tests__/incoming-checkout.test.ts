@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type Stripe from "stripe";
 
 vi.mock("../lib/commerce/auth/client", () => ({
@@ -22,10 +22,35 @@ const session = {
   metadata: { OrderID: "order-1", ClientID: "buyer-client-id" },
 } as unknown as Stripe.Checkout.Session;
 
+const originalMiddlewareId = process.env.ORDERCLOUD_MIDDLEWARE_CLIENT_ID;
+const originalMiddlewareSecret = process.env.ORDERCLOUD_MIDDLEWARE_CLIENT_SECRET;
+
 describe("completeIncomingCheckout", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.ORDERCLOUD_MIDDLEWARE_CLIENT_ID = "middleware-id";
+    process.env.ORDERCLOUD_MIDDLEWARE_CLIENT_SECRET = "middleware-secret";
     tokenMock.mockResolvedValue({ accessToken: "mw-token", expiresIn: 3600 });
+  });
+
+  afterEach(() => {
+    if (originalMiddlewareId === undefined) delete process.env.ORDERCLOUD_MIDDLEWARE_CLIENT_ID;
+    else process.env.ORDERCLOUD_MIDDLEWARE_CLIENT_ID = originalMiddlewareId;
+    if (originalMiddlewareSecret === undefined) delete process.env.ORDERCLOUD_MIDDLEWARE_CLIENT_SECRET;
+    else process.env.ORDERCLOUD_MIDDLEWARE_CLIENT_SECRET = originalMiddlewareSecret;
+  });
+
+  it("skips Incoming pay/submit when middleware credentials are not configured", async () => {
+    delete process.env.ORDERCLOUD_MIDDLEWARE_CLIENT_ID;
+    delete process.env.ORDERCLOUD_MIDDLEWARE_CLIENT_SECRET;
+
+    await expect(completeIncomingCheckout(session)).resolves.toEqual({
+      orderId: "order-1",
+      idempotent: false,
+      skipped: true,
+    });
+    expect(tokenMock).not.toHaveBeenCalled();
+    expect(requestMock).not.toHaveBeenCalled();
   });
 
   it("no-ops when Incoming xp.CheckoutStatus is already terminal", async () => {

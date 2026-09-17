@@ -18,3 +18,6 @@ export const commerceAuthConfig = {
     return read('ORDERCLOUD_MIDDLEWARE_SCOPE') || 'OrderAdmin';
   },
 };
+
+export const isMiddlewareConfigured = (): boolean =>
+  Boolean(commerceAuthConfig.middlewareClientId && commerceAuthConfig.middlewareClientSecret);

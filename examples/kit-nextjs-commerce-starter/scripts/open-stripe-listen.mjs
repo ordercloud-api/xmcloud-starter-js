@@ -3,7 +3,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const cwd = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const listenCommand = 'stripe listen --forward-to localhost:3000/stripe/complete';
+const listenCommand =
+  'stripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed --forward-to localhost:3000/stripe/complete';
 
 if (process.env.CI) {
   process.exit(0);

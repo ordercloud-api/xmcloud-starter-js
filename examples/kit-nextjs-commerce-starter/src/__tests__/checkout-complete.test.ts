@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { readClientIdFromRawEvent } from "../lib/commerce/checkout/webhook-event";
+import {
+  isCheckoutSessionEventType,
+  readClientIdFromRawEvent,
+  readEventTypeFromRawEvent,
+} from "../lib/commerce/checkout/webhook-event";
 import {
   isTerminalCheckoutStatus,
   toGatewayCheckoutStatus,
@@ -19,6 +23,17 @@ describe("readClientIdFromRawEvent", () => {
   it("returns null for invalid payloads", () => {
     expect(readClientIdFromRawEvent("{")).toBeNull();
     expect(readClientIdFromRawEvent(JSON.stringify({ data: { object: {} } }))).toBeNull();
+  });
+});
+
+describe("readEventTypeFromRawEvent", () => {
+  it("reads unverified Stripe event type", () => {
+    expect(readEventTypeFromRawEvent(JSON.stringify({ type: "payment_intent.succeeded" }))).toBe(
+      "payment_intent.succeeded",
+    );
+    expect(isCheckoutSessionEventType("checkout.session.completed")).toBe(true);
+    expect(isCheckoutSessionEventType("payment_intent.succeeded")).toBe(false);
+    expect(readEventTypeFromRawEvent("{")).toBeNull();
   });
 });
 

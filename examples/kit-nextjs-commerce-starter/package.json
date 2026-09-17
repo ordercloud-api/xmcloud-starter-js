@@ -75,7 +75,7 @@
     "commerce:check": "bash scripts/check-commerce-flow.sh",
     "commerce:seed": "node scripts/seed-oc-catalog.mjs",
     "commerce:up": "bash scripts/up-commerce-flow.sh",
-    "stripe:listen": "stripe listen --forward-to localhost:3000/stripe/complete",
+    "stripe:listen": "stripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed --forward-to localhost:3000/stripe/complete",
     "dev": "node scripts/open-stripe-listen.mjs && cross-env NODE_ENV=development npm-run-all --serial sitecore-tools:generate-map sitecore-tools:build --parallel next:dev sitecore-tools:generate-map:watch",
     "start": "cross-env-shell NODE_ENV=production npm-run-all --serial build next:start"
   }
