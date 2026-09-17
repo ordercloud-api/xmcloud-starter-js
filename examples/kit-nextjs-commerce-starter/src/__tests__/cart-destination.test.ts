@@ -6,8 +6,10 @@ import {
   isCartHref,
   isCartNavItem,
   isCartRoute,
+  isShowCartLinkEnabled,
   normalizeCartPath,
   partitionNavigationItems,
+  resolveCartButtonDestination,
 } from "../lib/commerce/cart/destination";
 
 describe("getCartDestination", () => {
@@ -129,5 +131,55 @@ describe("isCartRoute", () => {
         { href: "/cart" },
       ),
     ).toBe(false);
+  });
+});
+
+describe("isShowCartLinkEnabled", () => {
+  it("defaults to showing the cart label", () => {
+    expect(isShowCartLinkEnabled()).toBe(true);
+    expect(isShowCartLinkEnabled({})).toBe(true);
+  });
+
+  it("hides the label for Sitecore and HeaderST false values", () => {
+    expect(isShowCartLinkEnabled({ ShowCartLink: "0" })).toBe(false);
+    expect(isShowCartLinkEnabled({ ShowCartLink: "false" })).toBe(false);
+    expect(isShowCartLinkEnabled({ Parameters: "ShowCartLink=0" })).toBe(false);
+  });
+
+  it("shows the label for 1 and true", () => {
+    expect(isShowCartLinkEnabled({ ShowCartLink: "1" })).toBe(true);
+    expect(isShowCartLinkEnabled({ "Show cart link": "true" })).toBe(true);
+  });
+});
+
+describe("resolveCartButtonDestination", () => {
+  it("prefers CartPage on the button over Navigation", () => {
+    expect(
+      resolveCartButtonDestination(
+        { CartPage: "/basket" },
+        {
+          placeholders: {
+            "headless-header": [
+              { componentName: "Navigation", params: { CartPage: "/cart" } },
+            ],
+          },
+        },
+      ),
+    ).toEqual({ href: "/basket" });
+  });
+
+  it("inherits Navigation CartPage when the button has none", () => {
+    expect(
+      resolveCartButtonDestination(
+        {},
+        {
+          placeholders: {
+            "headless-header": [
+              { componentName: "Navigation", params: { CartPage: "/basket" } },
+            ],
+          },
+        },
+      ),
+    ).toEqual({ href: "/basket" });
   });
 });

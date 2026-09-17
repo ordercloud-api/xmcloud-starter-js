@@ -4,6 +4,11 @@ const GUID_PATTERN =
   /^\{?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\}?$/i;
 
 const CART_PAGE_PARAM_KEYS = ["cartpage", "cart page", "cart_page"];
+const SHOW_CART_LINK_PARAM_KEYS = [
+  "showcartlink",
+  "show cart link",
+  "show_cart_link",
+];
 
 export type CartDestination = {
   href: string;
@@ -89,11 +94,16 @@ const parseQueryBag = (raw: string): Record<string, string> => {
 
 const valueFromParams = (
   params?: Record<string, unknown>,
+  keys: string[] = CART_PAGE_PARAM_KEYS,
+  options: { allowEmpty?: boolean } = {},
 ): string | undefined => {
   if (!params) return undefined;
 
   for (const [key, value] of Object.entries(params)) {
-    if (CART_PAGE_PARAM_KEYS.includes(key.trim().toLowerCase())) {
+    if (keys.includes(key.trim().toLowerCase())) {
+      if (options.allowEmpty && typeof value === "string") {
+        return value.trim();
+      }
       const parsed = readParamValue(value);
       if (parsed) return parsed;
     }
@@ -104,9 +114,9 @@ const valueFromParams = (
     if (rawParameters.includes("=")) {
       const bag = parseQueryBag(rawParameters);
       for (const [key, value] of Object.entries(bag)) {
-        if (CART_PAGE_PARAM_KEYS.includes(key.trim().toLowerCase()) && value) {
-          return value;
-        }
+        if (!keys.includes(key.trim().toLowerCase())) continue;
+        if (options.allowEmpty) return value;
+        if (value) return value;
       }
     }
   }
@@ -121,6 +131,36 @@ export const getCartDestination = (
   if (!raw) return { href: CART_HREF_DEFAULT };
   if (isItemId(raw)) return { href: CART_HREF_DEFAULT, id: normalizeItemId(raw) };
   return { href: normalizeCartPath(raw) };
+};
+
+export const resolveCartButtonDestination = (
+  params?: Record<string, unknown>,
+  route?: LayoutRoute | null,
+): CartDestination => {
+  if (valueFromParams(params)) return getCartDestination(params);
+  return getCartDestinationFromRoute(route);
+};
+
+const isCheckboxTrue = (value: string): boolean => {
+  const normalized = value.trim().toLowerCase();
+  return normalized === "1" || normalized === "true";
+};
+
+const isCheckboxFalse = (value: string): boolean => {
+  const normalized = value.trim().toLowerCase();
+  return normalized === "0" || normalized === "false";
+};
+
+export const isShowCartLinkEnabled = (
+  params?: Record<string, unknown>,
+): boolean => {
+  const raw = valueFromParams(params, SHOW_CART_LINK_PARAM_KEYS, {
+    allowEmpty: true,
+  });
+  if (raw === undefined || raw === "") return true;
+  if (isCheckboxFalse(raw)) return false;
+  if (isCheckboxTrue(raw)) return true;
+  return true;
 };
 
 export const isCartHref = (
