@@ -1,11 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useOrderCloud } from '@/contexts/OrderCloudContext';
 import { useMarketplaceClient } from '@/hooks/useMarketplaceClient';
-import type {
-  CommerceProduct,
-  CommerceProductList,
-} from '@/lib/commerce/products/types';
+import type { CommerceProduct } from '@/lib/commerce/products/types';
 import {
   parseProductReferenceList,
   serializeProductReferenceList,
@@ -16,14 +14,6 @@ import {
   type ProductReference,
 } from '@/lib/commerce/products/reference';
 
-const asErrorMessage = (value: unknown): string => {
-  if (value && typeof value === 'object' && 'error' in value) {
-    const error = (value as { error?: unknown }).error;
-    if (typeof error === 'string' && error.trim()) return error;
-  }
-  return 'Unable to load OrderCloud products';
-};
-
 const isMultiplePickerSearch = (search: string): boolean => {
   const value = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search).get(
     'multiple',
@@ -32,6 +22,11 @@ const isMultiplePickerSearch = (search: string): boolean => {
 };
 
 export default function OrderCloudProductPickerPage() {
+  const {
+    products: productsService,
+    status,
+    error: sessionError,
+  } = useOrderCloud();
   const {
     client,
     error: marketplaceError,
@@ -64,29 +59,32 @@ export default function OrderCloudProductPickerPage() {
   }, [client, isMultiple, modeReady]);
 
   useEffect(() => {
+    if (status !== 'authenticated') {
+      setProducts([]);
+      setProductError(
+        status === 'error'
+          ? sessionError?.message ?? 'Unable to start commerce session'
+          : null,
+      );
+      setLoadingProducts(status === 'loading');
+      return;
+    }
+
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => {
-      const searchParams = new URLSearchParams({ pageSize: '20' });
-      if (query.trim()) searchParams.set('search', query.trim());
-
       setLoadingProducts(true);
       setProductError(null);
-      void fetch(`/api/commerce/products?${searchParams.toString()}`, {
-        signal: controller.signal,
-      })
-        .then(async (response) => {
-          const body = (await response.json()) as
-            CommerceProductList | { error: string };
-          if (!response.ok || !('items' in body))
-            throw new Error(asErrorMessage(body));
+      void productsService
+        .list({
+          search: query.trim() || undefined,
+          pageSize: 20,
+          signal: controller.signal,
+        })
+        .then((body) => {
           setProducts(body.items);
         })
         .catch((loadError: unknown) => {
-          if (
-            loadError instanceof DOMException &&
-            loadError.name === 'AbortError'
-          )
-            return;
+          if (controller.signal.aborted) return;
           setProducts([]);
           setProductError(
             loadError instanceof Error
@@ -101,7 +99,7 @@ export default function OrderCloudProductPickerPage() {
       window.clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [query]);
+  }, [productsService, query, sessionError, status]);
 
   const save = async () => {
     const selectedProduct = selected[0];

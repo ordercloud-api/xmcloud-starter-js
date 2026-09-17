@@ -28,7 +28,7 @@ Renders the current anonymous session's OrderCloud cart, via the shared `CartPan
 ## Checkout flow (`checkout()` → `startHostedCheckout()`)
 
 1. Requires `accessToken` to be present (throws "Unable to start checkout without a shopper session." otherwise — a defensive check; in practice `OrderCloudContext` should always have a token by the time this button is reachable).
-2. `startHostedCheckout(accessToken)` (`lib/commerce/checkout/hosted.ts`) `POST`s to `getCheckoutGatewayUrl("/stripe/checkout")` (`lib/commerce/checkout/gateway-url.ts`) with `Authorization: Bearer {accessToken}`. The gateway origin is configurable via `NEXT_PUBLIC_CHECKOUT_GATEWAY_URL` (empty by default, meaning same-origin `/stripe/*` rewrites to the PoC API).
+2. `startHostedCheckout(accessToken)` (`lib/commerce/checkout/hosted.ts`) `POST`s to `/stripe/checkout` with `Authorization: Bearer {accessToken}`.
 3. Expects `{ orderId?, redirectUrl }` — throws if `redirectUrl` is missing or the response isn't OK, using `result.error` or a generic `Checkout failed with {status}` message.
 4. On success, stores `result.orderId` in `sessionStorage` under `CHECKOUT_ORDER_ID_STORAGE_KEY`, then navigates via `window.location.assign(result.redirectUrl)`.
 5. Errors are shown inline near the Checkout button (`checkoutError` state); unlike the previous implementation, there's no manual "Open Stripe checkout" fallback link rendered while waiting for the redirect.

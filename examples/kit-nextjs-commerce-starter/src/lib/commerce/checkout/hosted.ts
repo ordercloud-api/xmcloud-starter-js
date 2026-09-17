@@ -1,5 +1,3 @@
-import { getCheckoutGatewayUrl } from "./gateway-url";
-
 type HostedCheckoutResult = {
   orderId?: string;
   redirectUrl?: string;
@@ -9,7 +7,7 @@ type HostedCheckoutResult = {
 export const startHostedCheckout = async (
   accessToken: string,
 ): Promise<{ orderId?: string; redirectUrl: string }> => {
-  const response = await fetch(getCheckoutGatewayUrl("/stripe/checkout"), {
+  const response = await fetch("/stripe/checkout", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,

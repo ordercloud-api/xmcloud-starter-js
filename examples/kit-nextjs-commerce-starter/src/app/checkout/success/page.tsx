@@ -4,7 +4,6 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { readStoredOrderCloudToken } from '@/lib/commerce/auth/token-store';
-import { getCheckoutGatewayUrl } from '@/lib/commerce/checkout/gateway-url';
 import {
   CHECKOUT_ORDER_ID_STORAGE_KEY,
   isTerminalCheckoutStatus,
@@ -53,7 +52,7 @@ function CheckoutSuccessContent() {
         });
         if (stripeSessionId) params.set('sessionId', stripeSessionId);
 
-        const response = await fetch(getCheckoutGatewayUrl(`/stripe/status?${params.toString()}`), {
+        const response = await fetch(`/stripe/status?${params.toString()}`, {
           cache: 'no-store',
           headers: { Authorization: `Bearer ${token}` },
         });
