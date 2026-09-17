@@ -112,6 +112,7 @@ const SpecForm: React.FC<
           defaultOptionControl={defaultOptionControl}
           currency={productData.product.currency}
           disabled={false}
+          optionAvailability={productData.optionAvailability}
           onChange={productData.updateSelection}
         />
       )}

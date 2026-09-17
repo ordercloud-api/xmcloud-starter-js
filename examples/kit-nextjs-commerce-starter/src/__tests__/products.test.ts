@@ -254,4 +254,54 @@ describe('ProductsService', () => {
       { accessToken: 'test-token', signal: undefined },
     );
   });
+  it('loads every page of active variants and normalizes their spec combinations', async () => {
+    const firstPage = Array.from({ length: 100 }, (_, index) => ({
+      ID: `VARIANT-${index + 1}`,
+      Active: true,
+      Specs: [{ SpecID: 'SIZE', OptionID: `SIZE-${index + 1}` }],
+    }));
+    const listVariants = vi
+      .spyOn(Me, 'ListVariants')
+      .mockResolvedValueOnce({
+        Items: firstPage,
+        Meta: { Page: 1, PageSize: 100, TotalPages: 2, TotalCount: 102 },
+      } as never)
+      .mockResolvedValueOnce({
+        Items: [
+          {
+            ID: 'VARIANT-101',
+            Active: false,
+            Specs: [{ SpecID: 'SIZE', OptionID: 'SIZE-101' }],
+          },
+          {
+            ID: 'VARIANT-102',
+            Active: true,
+            Specs: [{ SpecID: 'SIZE', OptionID: 'SIZE-102' }],
+          },
+        ],
+        Meta: { Page: 2, PageSize: 100, TotalPages: 2, TotalCount: 102 },
+      } as never);
+    const service = new ProductsService(request);
+
+    const variants = await service.listVariants('SKU-123');
+
+    expect(variants).toHaveLength(101);
+    expect(variants.at(-1)).toEqual({
+      id: 'VARIANT-102',
+      active: true,
+      specs: { SIZE: 'SIZE-102' },
+    });
+    expect(listVariants).toHaveBeenNthCalledWith(
+      1,
+      'SKU-123',
+      { page: 1, pageSize: 100, filters: { Active: true } },
+      { accessToken: 'test-token', signal: undefined },
+    );
+    expect(listVariants).toHaveBeenNthCalledWith(
+      2,
+      'SKU-123',
+      { page: 2, pageSize: 100, filters: { Active: true } },
+      { accessToken: 'test-token', signal: undefined },
+    );
+  });
 });

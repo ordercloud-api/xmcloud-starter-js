@@ -10,6 +10,7 @@ import {
   type ProductSpecSelection,
   type ProductSpecSelections,
 } from "@/lib/commerce/products/specs";
+import type { ProductSpecOptionAvailability } from "@/lib/commerce/products/variants";
 
 const selectedClasses = "border-slate-950 bg-slate-950 text-white";
 const unselectedClasses =
@@ -115,6 +116,7 @@ const OptionChoices = ({
   describedBy,
   currency,
   disabled,
+  optionAvailability,
   onChange,
 }: {
   spec: CommerceProductSpec;
@@ -124,6 +126,7 @@ const OptionChoices = ({
   describedBy?: string;
   currency?: string;
   disabled: boolean;
+  optionAvailability?: Record<string, boolean>;
   onChange: (selection: ProductSpecSelection) => void;
 }) => {
   const selectOption = (optionId?: string) => {
@@ -154,10 +157,13 @@ const OptionChoices = ({
         </option>
         {spec.options.map((option) => {
           const markup = formatMarkup(option, currency);
+          const optionDisabled =
+            disabled || optionAvailability?.[option.id] === false;
           return (
-            <option key={option.id} value={option.id}>
+            <option key={option.id} value={option.id} disabled={optionDisabled}>
               {option.presentation.label ?? option.name}
               {markup ? ` (${markup})` : ""}
+              {optionDisabled ? " — Unavailable" : ""}
             </option>
           );
         })}
@@ -183,14 +189,14 @@ const OptionChoices = ({
         {spec.options.map((option) => (
           <label
             key={option.id}
-            className="flex cursor-pointer items-start gap-2 text-sm"
+            className={`flex items-start gap-2 text-sm ${disabled || optionAvailability?.[option.id] === false ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
           >
             <input
               type="radio"
               name={controlId}
               value={option.id}
               checked={selection.optionId === option.id}
-              disabled={disabled}
+              disabled={disabled || optionAvailability?.[option.id] === false}
               onChange={() => selectOption(option.id)}
             />
             <span>
@@ -225,11 +231,13 @@ const OptionChoices = ({
     <div className={layoutClasses} aria-describedby={describedBy}>
       {spec.options.map((option) => {
         const selected = selection.optionId === option.id;
+        const optionDisabled =
+          disabled || optionAvailability?.[option.id] === false;
         return (
           <button
             key={option.id}
             type="button"
-            disabled={disabled}
+            disabled={optionDisabled}
             aria-pressed={selected}
             onClick={() =>
               selectOption(selected && !spec.required ? undefined : option.id)
@@ -323,6 +331,7 @@ export const ProductSpecFields = ({
   defaultOptionControl,
   currency,
   disabled,
+  optionAvailability,
   onChange,
 }: {
   specs: CommerceProductSpec[];
@@ -331,6 +340,7 @@ export const ProductSpecFields = ({
   defaultOptionControl: "dropdown" | "buttons";
   currency?: string;
   disabled: boolean;
+  optionAvailability?: ProductSpecOptionAvailability;
   onChange: (specId: string, selection: ProductSpecSelection) => void;
 }) => {
   const idPrefix = useId();
@@ -383,6 +393,7 @@ export const ProductSpecFields = ({
             describedBy={describedBy}
             currency={currency}
             disabled={disabled}
+            optionAvailability={optionAvailability?.[spec.id]}
             onChange={(nextSelection) => onChange(spec.id, nextSelection)}
           />
         )}

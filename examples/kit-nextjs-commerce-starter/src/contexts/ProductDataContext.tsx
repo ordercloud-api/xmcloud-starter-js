@@ -25,6 +25,13 @@ import {
   type ProductSpecSelection,
   type ProductSpecSelections,
 } from "@/lib/commerce/products/specs";
+import {
+  getInitialProductSelections,
+  getVariantOptionAvailability,
+  resolveSelectedVariant,
+  type CommerceProductVariant,
+  type ProductSpecOptionAvailability,
+} from "@/lib/commerce/products/variants";
 
 export type ProductDataStatus =
   | "loading-session"
@@ -44,6 +51,12 @@ export type ProductDataContextValue = {
   specsStatus: "loading" | "ready" | "error";
   specsError: string | null;
   retrySpecs: () => void;
+  variants: CommerceProductVariant[];
+  variantsStatus: "loading" | "ready" | "error";
+  variantsError: string | null;
+  hasVariantSpecs: boolean;
+  selectedVariant?: CommerceProductVariant;
+  optionAvailability: ProductSpecOptionAvailability;
   selections: ProductSpecSelections;
   areSpecSelectionsValid: boolean;
   validationErrors: Record<string, string>;
@@ -83,6 +96,10 @@ export const ProductDataProvider = ({
   const [specsStatus, setSpecsStatus] =
     useState<ProductDataContextValue["specsStatus"]>("loading");
   const [specsError, setSpecsError] = useState<string | null>(null);
+  const [variants, setVariants] = useState<CommerceProductVariant[]>([]);
+  const [variantsStatus, setVariantsStatus] =
+    useState<ProductDataContextValue["variantsStatus"]>("loading");
+  const [variantsError, setVariantsError] = useState<string | null>(null);
   const [specsRefreshSeed, setSpecsRefreshSeed] = useState(0);
   const [selections, setSelections] = useState<ProductSpecSelections>({});
   const [validationErrors, setValidationErrors] = useState<
@@ -145,26 +162,46 @@ export const ProductDataProvider = ({
 
   useEffect(() => {
     setSpecs([]);
+    setVariants([]);
     setSelections({});
     setSpecsError(null);
+    setVariantsError(null);
     setValidationErrors({});
 
     if (!productId || loadStatus !== "ready") {
       setSpecsStatus("loading");
+      setVariantsStatus("loading");
       return;
     }
 
     const controller = new AbortController();
     let active = true;
     setSpecsStatus("loading");
+    setVariantsStatus("loading");
 
     void products
       .listSpecs(productId, { signal: controller.signal })
-      .then((nextSpecs) => {
+      .then(async (nextSpecs) => {
         if (!active) return;
+        const hasVariants = nextSpecs.some((spec) => spec.definesVariant);
+        const nextVariants = hasVariants
+          ? await products.listVariants(productId, {
+              signal: controller.signal,
+            })
+          : [];
+        if (!active) return;
+        const initialSelections = getInitialSpecSelections(nextSpecs);
         setSpecs(nextSpecs);
-        setSelections(getInitialSpecSelections(nextSpecs));
+        setVariants(nextVariants);
+        setSelections(
+          getInitialProductSelections(
+            nextSpecs,
+            nextVariants,
+            initialSelections,
+          ),
+        );
         setSpecsStatus("ready");
+        setVariantsStatus("ready");
       })
       .catch((error: unknown) => {
         if (!active || controller.signal.aborted) return;
@@ -174,6 +211,12 @@ export const ProductDataProvider = ({
             : "Unable to load product options",
         );
         setSpecsStatus("error");
+        setVariantsError(
+          error instanceof Error
+            ? error.message
+            : "Unable to load product variants",
+        );
+        setVariantsStatus("error");
       });
 
     return () => {
@@ -198,11 +241,30 @@ export const ProductDataProvider = ({
     },
     [],
   );
-  const areSpecSelectionsValid = useMemo(
-    () =>
-      specsStatus === "ready" &&
-      Object.keys(validateSpecSelections(specs, selections)).length === 0,
-    [selections, specs, specsStatus],
+  const areSpecSelectionsValid = useMemo(() => {
+    if (
+      specsStatus !== "ready" ||
+      variantsStatus !== "ready" ||
+      Object.keys(validateSpecSelections(specs, selections)).length > 0
+    )
+      return false;
+
+    return (
+      !specs.some((spec) => spec.definesVariant) ||
+      Boolean(resolveSelectedVariant(specs, selections, variants))
+    );
+  }, [selections, specs, specsStatus, variants, variantsStatus]);
+  const hasVariantSpecs = useMemo(
+    () => specs.some((spec) => spec.definesVariant),
+    [specs],
+  );
+  const selectedVariant = useMemo(
+    () => resolveSelectedVariant(specs, selections, variants),
+    [selections, specs, variants],
+  );
+  const optionAvailability = useMemo(
+    () => getVariantOptionAvailability(specs, selections, variants),
+    [selections, specs, variants],
   );
 
   const value = useMemo<ProductDataContextValue>(
@@ -216,6 +278,12 @@ export const ProductDataProvider = ({
       specsStatus,
       specsError,
       retrySpecs,
+      variants,
+      variantsStatus,
+      variantsError,
+      hasVariantSpecs,
+      selectedVariant,
+      optionAvailability,
       selections,
       areSpecSelectionsValid,
       validationErrors,
@@ -230,6 +298,12 @@ export const ProductDataProvider = ({
       areSpecSelectionsValid,
       retry,
       retrySpecs,
+      variants,
+      variantsError,
+      variantsStatus,
+      hasVariantSpecs,
+      selectedVariant,
+      optionAvailability,
       selections,
       specs,
       specsError,

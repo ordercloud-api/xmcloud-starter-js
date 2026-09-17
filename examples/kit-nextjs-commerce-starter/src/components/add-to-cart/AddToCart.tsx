@@ -18,7 +18,9 @@ export const Default: React.FC<ComponentProps> = ({ params, page }) => {
   const productData = useProductContext();
   const { cart } = useOrderCloud();
   const isAuthoring = page.mode.isEditing || page.mode.isDesignLibrary;
-  const cartHref = getCartDestinationFromRoute(page.layout?.sitecore?.route).href;
+  const cartHref = getCartDestinationFromRoute(
+    page.layout?.sitecore?.route,
+  ).href;
   const [quantity, setQuantity] = useState("1");
   const [quantityError, setQuantityError] = useState<string | null>(null);
   const [submissionStatus, setSubmissionStatus] =
@@ -60,6 +62,11 @@ export const Default: React.FC<ComponentProps> = ({ params, page }) => {
     if (Object.keys(nextSpecErrors).length > 0) {
       setSubmissionStatus("error");
       setSubmissionMessage("Select the required product options.");
+      return;
+    }
+    if (productData.hasVariantSpecs && !productData.selectedVariant) {
+      setSubmissionStatus("error");
+      setSubmissionMessage("This product option combination is unavailable.");
       return;
     }
     if (!hasValidQuantity) return;

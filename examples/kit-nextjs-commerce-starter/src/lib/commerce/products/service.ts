@@ -1,4 +1,4 @@
-import { Me, type Spec } from "ordercloud-javascript-sdk";
+import { Me, type Spec, type Variant } from "ordercloud-javascript-sdk";
 import { getCommerceBrowserConfig } from "../browser-config";
 import type { CommerceRequest } from "../client";
 import { toCommerceProduct } from "./mapper";
@@ -10,6 +10,10 @@ import type {
   ProductRequestOptions,
 } from "./types";
 import { toCommerceProductSpec, type CommerceProductSpec } from "./specs";
+import {
+  toCommerceProductVariant,
+  type CommerceProductVariant,
+} from "./variants";
 
 const asPositiveInteger = (value: unknown): number | undefined =>
   typeof value === "number" && Number.isInteger(value) && value > 0
@@ -135,5 +139,45 @@ export class ProductsService {
           return spec ? [spec] : [];
         })
       : [];
+  }
+
+  async listVariants(
+    productId: string,
+    options: ProductRequestOptions = {},
+  ): Promise<CommerceProductVariant[]> {
+    const normalizedId = productId.trim();
+    if (!normalizedId) throw new Error("OrderCloud product ID is required");
+
+    const variants: CommerceProductVariant[] = [];
+    const pageSize = 100;
+    let page = 1;
+
+    while (true) {
+      const response = await this.request((requestOptions) => {
+        const optionsWithSignal = { ...requestOptions, signal: options.signal };
+        return Me.ListVariants<Variant>(
+          normalizedId,
+          { page, pageSize, filters: { Active: true } },
+          optionsWithSignal,
+        );
+      });
+      const pageItems = Array.isArray(response.Items) ? response.Items : [];
+      variants.push(
+        ...pageItems.flatMap((value) => {
+          const variant = toCommerceProductVariant(value);
+          return variant?.active ? [variant] : [];
+        }),
+      );
+
+      const totalPages = asNonNegativeInteger(response.Meta?.TotalPages);
+      if (
+        pageItems.length < pageSize ||
+        (totalPages !== undefined && page >= totalPages)
+      )
+        break;
+      page += 1;
+    }
+
+    return variants;
   }
 }

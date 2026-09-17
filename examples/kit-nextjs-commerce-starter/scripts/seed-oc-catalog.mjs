@@ -182,6 +182,173 @@ const products = [
 ];
 
 const specs = [
+  // Scenario 1: pure customization specs with no generated variants.
+  {
+    productId: "air-max-90-317",
+    id: "AM90-LACE-PACK",
+    body: {
+      Name: "Extra Lace Pack",
+      ListOrder: 10,
+      xp: {
+        presentation: {
+          control: "cards",
+          label: "Extra lace pack",
+          helpText: "Add a second lace color to change up the Black Spruce colorway.",
+        },
+      },
+    },
+    options: [
+      option("NO-EXTRA-LACES", "No Extra Laces", 10, {
+        xp: {
+          presentation: {
+            label: "Original laces",
+            description: "The standard Vintage Green laces included with the shoe",
+          },
+        },
+      }),
+      option("SUMMIT-WHITE", "Summit White Lace Pack", 20, {
+        PriceMarkupType: "AmountPerQuantity",
+        PriceMarkup: 6,
+        xp: {
+          presentation: {
+            label: "Summit White",
+            description: "A bright contrast lace set",
+            badge: "Optional",
+          },
+        },
+      }),
+      option("BLACK-SPRUCE", "Black Spruce Lace Pack", 30, {
+        PriceMarkupType: "AmountPerQuantity",
+        PriceMarkup: 6,
+        xp: {
+          presentation: {
+            label: "Black Spruce",
+            description: "A tonal replacement lace set",
+            badge: "Optional",
+          },
+        },
+      }),
+    ],
+    defaultOptionId: "NO-EXTRA-LACES",
+  },
+  {
+    productId: "air-max-90-317",
+    id: "AM90-GIFT-NOTE",
+    body: {
+      Name: "Gift Note",
+      ListOrder: 20,
+      AllowOpenText: true,
+      xp: {
+        presentation: {
+          textControl: "textarea",
+          label: "Gift note",
+          helpText: "Optional message printed on a card inside the shoe box.",
+          placeholder: "Enjoy your new Air Max 90.",
+        },
+        validation: { maxLength: 120 },
+      },
+    },
+  },
+  // Scenario 2: every size/color permutation is an active variant.
+  {
+    productId: "ava-edge-001",
+    id: "AVA-EDGE-SIZE",
+    body: {
+      Name: "Women's Size",
+      ListOrder: 10,
+      Required: true,
+      DefinesVariant: true,
+      xp: {
+        presentation: {
+          control: "buttons",
+          label: "Select size",
+          helpText: "US women's sizing.",
+        },
+      },
+    },
+    options: ["6", "7", "8", "9", "10", "11"].map((value, i) => option(`W-${value}`, value, (i + 1) * 10)),
+    defaultOptionId: "W-8",
+  },
+  {
+    productId: "ava-edge-001",
+    id: "AVA-EDGE-COLOR",
+    body: {
+      Name: "Color",
+      ListOrder: 20,
+      Required: true,
+      DefinesVariant: true,
+      xp: {
+        presentation: {
+          control: "swatches",
+          label: "Color",
+          helpText: "Both colorways are offered in every listed size.",
+        },
+      },
+    },
+    options: [
+      option("WOLF-GREY", "Wolf Grey/Racer Blue", 10, {
+        xp: {
+          presentation: {
+            label: "Wolf Grey",
+            color: "#A7A9AC",
+            badge: "Shown",
+          },
+        },
+      }),
+      option("SAIL-BLACK", "Sail/Black/Light Orewood Brown", 20, {
+        xp: { presentation: { label: "Sail", color: "#E8E1D5" } },
+      }),
+    ],
+    defaultOptionId: "WOLF-GREY",
+  },
+  // Scenario 3: generated size/color variants with selected combinations disabled.
+  {
+    productId: "free-metcon-7-amp-001",
+    id: "FREE-METCON-7-SIZE",
+    body: {
+      Name: "Men's Size",
+      ListOrder: 10,
+      Required: true,
+      DefinesVariant: true,
+      xp: {
+        presentation: {
+          control: "buttons",
+          label: "Select size",
+          helpText: "US men's sizing.",
+        },
+      },
+    },
+    options: ["7", "8", "9", "10", "11", "12"].map((value, i) => option(`M-${value}`, value, (i + 1) * 10)),
+    defaultOptionId: "M-10",
+  },
+  {
+    productId: "free-metcon-7-amp-001",
+    id: "FREE-METCON-7-COLOR",
+    body: {
+      Name: "Color",
+      ListOrder: 20,
+      Required: true,
+      DefinesVariant: true,
+      xp: {
+        presentation: {
+          control: "swatches",
+          label: "Color",
+          helpText: "Availability varies by size.",
+        },
+      },
+    },
+    options: [
+      option("BLACK-HYPER-PUNCH", "Black/Hyper Punch/Indigo Burst", 10, {
+        xp: {
+          presentation: { label: "Black", color: "#171717", badge: "Shown" },
+        },
+      }),
+      option("WHITE-VOLT", "White/Volt/Photon Dust", 20, {
+        xp: { presentation: { label: "White/Volt", color: "#F2F1EA" } },
+      }),
+    ],
+    defaultOptionId: "BLACK-HYPER-PUNCH",
+  },
   {
     productId: "aj1-love-letter-201",
     id: "AJ1-LOVE-LETTER-SIZE",
@@ -309,7 +476,94 @@ const specs = [
   },
 ];
 
+const catalogScenarios = [
+  { productId: "air-max-90-317", description: "pure specs (no variant specs)" },
+  {
+    productId: "ava-edge-001",
+    description: "all variant specs, none disabled",
+  },
+  {
+    productId: "free-metcon-7-amp-001",
+    description: "all variant specs, selected combinations disabled",
+  },
+  {
+    productId: "air-force-1-low-by-you-900",
+    description: "mixed ordinary and variant specs",
+  },
+];
+
+const disabledVariantCombinations = {
+  "free-metcon-7-amp-001": [
+    {
+      "FREE-METCON-7-SIZE": "M-7",
+      "FREE-METCON-7-COLOR": "WHITE-VOLT",
+    },
+    {
+      "FREE-METCON-7-SIZE": "M-12",
+      "FREE-METCON-7-COLOR": "BLACK-HYPER-PUNCH",
+    },
+  ],
+};
+
+const variantSpecsForProduct = (productId) => specs.filter((spec) => spec.productId === productId && spec.body.DefinesVariant === true);
+
+const validateCatalogConfiguration = () => {
+  for (const spec of specs) {
+    if (spec.body.DefinesVariant === true && spec.body.Required !== true) {
+      throw new Error(`Variant spec ${spec.id} must also be required.`);
+    }
+  }
+
+  for (const scenario of catalogScenarios) {
+    const productSpecs = specs.filter((spec) => spec.productId === scenario.productId);
+    const variantSpecs = variantSpecsForProduct(scenario.productId);
+    const ordinarySpecs = productSpecs.filter((spec) => spec.body.DefinesVariant !== true);
+    const disabled = disabledVariantCombinations[scenario.productId] ?? [];
+    const valid = (scenario.description === "pure specs (no variant specs)" && ordinarySpecs.length > 0 && variantSpecs.length === 0) || (scenario.description === "all variant specs, none disabled" && variantSpecs.length > 0 && ordinarySpecs.length === 0 && disabled.length === 0) || (scenario.description === "all variant specs, selected combinations disabled" && variantSpecs.length > 0 && ordinarySpecs.length === 0 && disabled.length > 0) || (scenario.description === "mixed ordinary and variant specs" && variantSpecs.length > 0 && ordinarySpecs.length > 0);
+    if (!valid) {
+      throw new Error(`Catalog scenario ${scenario.productId} is not configured as ${scenario.description}.`);
+    }
+  }
+
+  for (const [productId, combinations] of Object.entries(disabledVariantCombinations)) {
+    const variantSpecs = variantSpecsForProduct(productId);
+    const expectedSpecIds = variantSpecs.map((spec) => spec.id).sort();
+    for (const combination of combinations) {
+      const actualSpecIds = Object.keys(combination).sort();
+      if (JSON.stringify(actualSpecIds) !== JSON.stringify(expectedSpecIds)) {
+        throw new Error(`Disabled variant for ${productId} must specify every variant spec.`);
+      }
+      for (const spec of variantSpecs) {
+        if (!(spec.options ?? []).some((item) => item.ID === combination[spec.id])) {
+          throw new Error(`Disabled variant for ${productId} references unknown option ${spec.id}/${combination[spec.id]}.`);
+        }
+      }
+    }
+  }
+};
+
+const listAllVariants = async (productId) => {
+  const variants = [];
+  let page = 1;
+  while (true) {
+    const response = await request(`list generated variants for ${productId}, page ${page}`, () => Products.ListVariants(productId, { page, pageSize: 100 }));
+    const items = response?.Items ?? [];
+    variants.push(...items);
+    if (items.length < 100 || page >= (response?.Meta?.TotalPages ?? page)) {
+      return variants;
+    }
+    page += 1;
+  }
+};
+
+const variantMatches = (variant, combination) => {
+  const actual = Object.fromEntries((variant.Specs ?? []).map((spec) => [spec.SpecID, spec.OptionID]));
+  return Object.entries(combination).every(([specId, optionId]) => actual[specId] === optionId);
+};
+
 const seed = async () => {
+  validateCatalogConfiguration();
+
   if (!dryRun && (!clientId || !clientSecret)) {
     throw new Error("Missing MIDDLEWARE_CLIENT_ID or MIDDLEWARE_CLIENT_SECRET. Set them in the environment or .env.");
   }
@@ -353,7 +607,32 @@ const seed = async () => {
     await request(`assign spec ${spec.id} to ${spec.productId}`, () => Specs.SaveProductAssignment({ SpecID: spec.id, ProductID: spec.productId }), { SpecID: spec.id, ProductID: spec.productId });
   }
 
+  const productsWithVariants = [...new Set(specs.filter((spec) => spec.body.DefinesVariant === true).map((spec) => spec.productId))];
+  for (const productId of productsWithVariants) {
+    await request(`generate variants for ${productId}`, () => Products.GenerateVariants(productId, { Active: true }, { overwriteExisting: true }), { productId, overwriteExisting: true, Active: true });
+
+    const disabled = disabledVariantCombinations[productId] ?? [];
+    if (dryRun) {
+      for (const combination of disabled) {
+        console.log(`[DRY_RUN] disable variant combination ${productId} ${JSON.stringify(combination)}`);
+      }
+      continue;
+    }
+
+    const generatedVariants = await listAllVariants(productId);
+    for (const combination of disabled) {
+      const matches = generatedVariants.filter((variant) => variantMatches(variant, combination));
+      if (matches.length !== 1) {
+        throw new Error(`Expected one generated variant for ${productId} ${JSON.stringify(combination)}, found ${matches.length}.`);
+      }
+      await request(`disable variant ${productId}/${matches[0].ID}`, () => Products.PatchVariant(productId, matches[0].ID, { Active: false }), { productId, variantId: matches[0].ID, combination, Active: false });
+    }
+  }
+
   console.log(`Seed complete. Catalog: ${catalogId}, Category: ${rootCategoryId}`);
+  for (const scenario of catalogScenarios) {
+    console.log(`Scenario: ${scenario.productId} - ${scenario.description}`);
+  }
 };
 
 seed().catch((error) => {
