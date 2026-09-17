@@ -24,6 +24,14 @@ export const toStripeCheckoutLineItems = (
 const toCancelUrl = (returnUrl: string): string =>
   new URL("/checkout/cancel", returnUrl).toString();
 
+export const toStripeSuccessUrl = (returnUrl: string): string => {
+  const url = new URL(returnUrl);
+  url.searchParams.delete("session_id");
+  const base = url.toString();
+  const separator = url.search ? "&" : "?";
+  return `${base}${separator}session_id={CHECKOUT_SESSION_ID}`;
+};
+
 export const createHostedCheckoutSession = async (
   cart: CommerceCart,
   credentials: StripeClientCredentials,
@@ -43,7 +51,7 @@ export const createHostedCheckoutSession = async (
     mode: "payment",
     line_items: toStripeCheckoutLineItems(cart),
     automatic_tax: { enabled: true },
-    success_url: credentials.returnUrl,
+    success_url: toStripeSuccessUrl(credentials.returnUrl),
     cancel_url: toCancelUrl(credentials.returnUrl),
     metadata: {
       OrderID: orderId,

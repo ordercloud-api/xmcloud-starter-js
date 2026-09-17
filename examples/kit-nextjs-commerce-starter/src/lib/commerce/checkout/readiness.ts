@@ -61,7 +61,7 @@ export const getCheckoutReadiness = (): CheckoutReadinessReport => {
   }
   if (!checks.middlewareClientId || !checks.middlewareClientSecret) {
     notes.push(
-      "Incoming webhook pay/submit is optional until OrderCloud middleware exists.",
+      "Incoming webhook pay/submit is optional until OrderCloud middleware exists. Without it, paid sessions submit as the shopper Outgoing order from /stripe/status.",
     );
   }
   if (!checks.orderCloudBuyerClientId) {

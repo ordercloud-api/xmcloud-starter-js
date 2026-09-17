@@ -67,7 +67,7 @@ describe("getCheckoutReadiness", () => {
     expect(report.notes).toEqual(
       expect.arrayContaining([
         "Hosted checkout cannot start until CHECKOUT_STRIPE_VAULT_JSON has an entry for the buyer API client.",
-        "Incoming webhook pay/submit is optional until OrderCloud middleware exists.",
+        "Incoming webhook pay/submit is optional until OrderCloud middleware exists. Without it, paid sessions submit as the shopper Outgoing order from /stripe/status.",
       ]),
     );
   });
@@ -82,7 +82,7 @@ describe("getCheckoutReadiness", () => {
     expect(report.ready).toBe(true);
     expect(report.webhookReady).toBe(false);
     expect(report.notes).toEqual([
-      "Incoming webhook pay/submit is optional until OrderCloud middleware exists.",
+      "Incoming webhook pay/submit is optional until OrderCloud middleware exists. Without it, paid sessions submit as the shopper Outgoing order from /stripe/status.",
     ]);
   });
 

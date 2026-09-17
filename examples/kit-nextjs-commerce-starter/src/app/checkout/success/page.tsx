@@ -2,10 +2,12 @@
 
 import { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { readStoredOrderCloudToken } from '@/lib/commerce/auth/token-store';
 import { getCheckoutGatewayUrl } from '@/lib/commerce/checkout/gateway-url';
 import {
   CHECKOUT_ORDER_ID_STORAGE_KEY,
+  isTerminalCheckoutStatus,
   type GatewayCheckoutStatus,
 } from '@/lib/commerce/checkout/status';
 
@@ -15,13 +17,20 @@ type CheckoutStatusPayload = {
   error?: string;
 };
 
-const POLL_INTERVAL_MS = 2000;
-const POLL_TIMEOUT_MS = 60_000;
+const pollDelayMs = (attempt: number): number => {
+  if (attempt <= 0) return 0;
+  if (attempt === 1) return 400;
+  if (attempt === 2) return 800;
+  if (attempt < 8) return 2000;
+  return 5000;
+};
 
 function CheckoutSuccessContent() {
+  const searchParams = useSearchParams();
+  const stripeSessionId = searchParams.get('session_id')?.trim() || '';
   const [status, setStatus] = useState<CheckoutStatusPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const startedAtRef = useRef(Date.now());
+  const attemptRef = useRef(0);
 
   useEffect(() => {
     let active = true;
@@ -38,13 +47,16 @@ function CheckoutSuccessContent() {
         if (!token) throw new Error('Shopper session expired. Return to the cart and try again.');
         if (!orderId) throw new Error('Missing checkout order id. Start checkout from the cart again.');
 
-        const response = await fetch(
-          getCheckoutGatewayUrl(`/stripe/status?orderId=${encodeURIComponent(orderId)}`),
-          {
-            cache: 'no-store',
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
+        const params = new URLSearchParams({
+          orderId,
+          t: String(Date.now()),
+        });
+        if (stripeSessionId) params.set('sessionId', stripeSessionId);
+
+        const response = await fetch(getCheckoutGatewayUrl(`/stripe/status?${params.toString()}`), {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const payload = (await response.json()) as CheckoutStatusPayload;
         if (!response.ok) throw new Error(payload.error || 'Unable to load order status');
         if (!active) return;
@@ -52,15 +64,15 @@ function CheckoutSuccessContent() {
         setStatus(payload);
         setError(null);
 
-        if (payload.checkoutStatus === 'Pending' && Date.now() - startedAtRef.current < POLL_TIMEOUT_MS) {
-          timeoutId = setTimeout(poll, POLL_INTERVAL_MS);
+        if (!isTerminalCheckoutStatus(payload.checkoutStatus)) {
+          attemptRef.current += 1;
+          timeoutId = setTimeout(poll, pollDelayMs(attemptRef.current));
         }
       } catch (err: unknown) {
         if (!active) return;
         setError(err instanceof Error ? err.message : 'Unable to load order status');
-        if (Date.now() - startedAtRef.current < POLL_TIMEOUT_MS) {
-          timeoutId = setTimeout(poll, POLL_INTERVAL_MS);
-        }
+        attemptRef.current += 1;
+        timeoutId = setTimeout(poll, pollDelayMs(attemptRef.current));
       }
     };
 
@@ -70,7 +82,7 @@ function CheckoutSuccessContent() {
       active = false;
       clearTimeout(timeoutId);
     };
-  }, []);
+  }, [stripeSessionId]);
 
   const checkoutStatus = status?.checkoutStatus ?? 'Pending';
 
@@ -85,8 +97,7 @@ function CheckoutSuccessContent() {
         {checkoutStatus === 'Pending' && 'Confirming your payment…'}
       </h1>
       <p className="text-muted-foreground text-sm">
-        Fulfillment runs from the Stripe webhook, not this page. This page polls the order until
-        that webhook has finished.
+        Confirming payment with Stripe and submitting the OrderCloud order.
       </p>
       {error && <p className="text-sm text-red-600">{error}</p>}
       {status && (

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toStripeCheckoutLineItems } from "../lib/commerce/checkout/session";
+import { toStripeCheckoutLineItems, toStripeSuccessUrl } from "../lib/commerce/checkout/session";
 import type { CommerceCart } from "../lib/commerce/cart/types";
 
 const cart: CommerceCart = {
@@ -36,5 +36,11 @@ describe("toStripeCheckoutLineItems", () => {
         quantity: 2,
       },
     ]);
+  });
+
+  it("puts Stripe's session id placeholder on the success URL", () => {
+    expect(toStripeSuccessUrl("http://localhost:3000/checkout/success")).toBe(
+      "http://localhost:3000/checkout/success?session_id={CHECKOUT_SESSION_ID}",
+    );
   });
 });
