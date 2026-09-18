@@ -11,7 +11,7 @@ These two patterns show up in every commerce component, but they're general Site
 
 ## 1. Defensive Datasource Field Access
 
-Every component reading Sitecore datasource fields uses a small local helper trio (duplicated per component today — `getDatasource`/`getNamedField`/`getFieldValue` appear near-identically in `product-container.props.ts`, `product-listing.props.ts`, and inline in `ProductContainer.tsx`):
+Components reading Sitecore datasource fields use a small local helper trio (`getDatasource`/`getNamedField`/`getFieldValue` in `product-container.props.ts` and `ProductContainer.tsx`):
 
 1. `getDatasource(fields)` — unwraps `fields.data.datasource` if present (GraphQL Layout Service integrated-content shape), else falls back to `fields` directly.
 2. `getNamedField(datasource, [names...])` — tries several casings/spacings of a field name (e.g. `productSource` / `ProductSource` / `"Product Source"`) since Sitecore template field names aren't guaranteed to match a single casing convention.
@@ -19,7 +19,7 @@ Every component reading Sitecore datasource fields uses a small local helper tri
 
 **Note:** confirmed field schemas (see [templates-and-renderings.md](templates-and-renderings.md)) show the exact-cased names (`Product Source`, `Product ID`, `Preview Product ID`) are what's actually authored in the live environment — the extra casing fallbacks in `getNamedField` are defensive-only and don't currently match anything different.
 
-**Gap to flag:** this trio is copy-pasted rather than shared from a common module — worth extracting to a shared utility, independent of any commerce-specific work.
+**Gap to flag:** related field-unwrapping logic still exists in more than one product-detail file and could be extracted into a shared utility.
 
 ## 2. Editor/Authoring-Safe States
 

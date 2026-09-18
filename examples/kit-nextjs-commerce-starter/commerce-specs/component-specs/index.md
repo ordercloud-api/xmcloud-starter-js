@@ -11,24 +11,23 @@ This is the component inventory: one markdown file per component, expanded with 
 
 ## Sitecore-registered components
 
-| Component | Spec |
-|---|---|
+| Component          | Spec                                         |
+| ------------------ | -------------------------------------------- |
 | `ProductContainer` | [product-container.md](product-container.md) |
-| `ProductInfo` | [product-info.md](product-info.md) |
-| `AddToCart` | [add-to-cart.md](add-to-cart.md) |
-| `ProductListing` | [product-listing.md](product-listing.md) |
-| `SpecForm` | [spec-form.md](spec-form.md) |
+| `ProductInfo`      | [product-info.md](product-info.md)           |
+| `AddToCart`        | [add-to-cart.md](add-to-cart.md)             |
+| `ProductList`      | [product-list.md](product-list.md)           |
+| `SpecForm`         | [spec-form.md](spec-form.md)                 |
 
 ## Helper components
 
 Not independently registered in `.sitecore/component-map.ts` — consumed by the components above. See [helpers/](helpers/).
 
-| Component | Spec |
-|---|---|
-| `commerce/OrderCloudProductList` | [helpers/order-cloud-product-list.md](helpers/order-cloud-product-list.md) |
+| Component                        | Spec                                                                       |
+| -------------------------------- | -------------------------------------------------------------------------- |
 | `commerce/OrderCloudProductCard` | [helpers/order-cloud-product-card.md](helpers/order-cloud-product-card.md) |
-| `commerce/OrderCloudCart` | [helpers/order-cloud-cart.md](helpers/order-cloud-cart.md) |
-| `commerce/ProductSpecFields` | [helpers/product-spec-fields.md](helpers/product-spec-fields.md) |
+| `commerce/OrderCloudCart`        | [helpers/order-cloud-cart.md](helpers/order-cloud-cart.md)                 |
+| `commerce/ProductSpecFields`     | [helpers/product-spec-fields.md](helpers/product-spec-fields.md)           |
 
 ## Drafts
 

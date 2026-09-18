@@ -8,11 +8,11 @@ source: https://github.com/ordercloud-api/xmcloud-starter-js/tree/feature/commer
 
 # `commerce/OrderCloudProductCard` (helper)
 
-> Part of [../../index.md](../../index.md). Purely presentational — not independently registered, no context/service dependencies. Used by [order-cloud-product-list.md](order-cloud-product-list.md).
+> Part of [../../index.md](../../index.md). Purely presentational — not independently registered and has no context or service dependencies.
 
 ## Summary
 
-Renders a single OrderCloud product as a card: image, name, optional ID/brand/category, price, optional description. Used only inside [`OrderCloudProductList`](order-cloud-product-list.md) — `ProductListing`'s own `"sitecore"` branch has its own separate `ProductCard` (see [../product-listing.md](../product-listing.md)) since that one renders Sitecore field components instead of raw OrderCloud data.
+Renders a single OrderCloud product as a card: image, name, optional ID/brand/category, price, and optional description. Used by `OrderCloudProductList`, the client experience behind the Sitecore-registered `ProductList` component.
 
 - **Location:** `src/components/commerce/OrderCloudProductCard.tsx` (default export)
 - **Rendering type:** client (`"use client"`)

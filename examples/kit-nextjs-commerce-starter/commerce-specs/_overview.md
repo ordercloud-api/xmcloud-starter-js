@@ -19,7 +19,7 @@ MVP reference (not a formal PRD — to be reverse-engineered into a spec):
 - **Branch:** `feature/commerce-starter`
 - **Example to examine:** `kit-nextjs-commerce-starter`
 - **Relevant folders/files:**
-  - `components/product-listing`
+  - `components/product-list`
   - `components/product-info`
   - `components/add-to-cart`
   - `components/product-container`
@@ -42,7 +42,8 @@ Per-component specifications, one markdown file per component from the inventory
 
 - [x] Baseline spec documenting the existing MVP commerce components (template/rendering definitions, reusable patterns, conventions used) — see [templates-and-renderings.md](templates-and-renderings.md), [component-specs/index.md](component-specs/index.md), and [commerce-component-patterns.md](commerce-component-patterns.md)
 - [x] Per-component specifications — see [component-specs/](component-specs/index.md)
-- [ ] New component specifications defined on top of that baseline — first draft: [component-specs/drafts/cart-row-minicart-copy.md](component-specs/drafts/cart-row-minicart-copy.md)
+- [x] First new component implemented on top of that baseline — [ProductList](component-specs/product-list.md)
+- [ ] Additional component specifications defined on top of that baseline — current draft: [component-specs/drafts/cart-row-minicart-copy.md](component-specs/drafts/cart-row-minicart-copy.md)
 
 ## System Interaction Diagram
 
