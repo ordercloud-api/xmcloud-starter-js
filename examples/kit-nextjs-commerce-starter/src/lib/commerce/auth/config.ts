@@ -15,7 +15,7 @@ export const commerceAuthConfig = {
     return read('ORDERCLOUD_MIDDLEWARE_CLIENT_SECRET');
   },
   get middlewareScope(): string {
-    return read('ORDERCLOUD_MIDDLEWARE_SCOPE') || 'OrderAdmin';
+    return read('ORDERCLOUD_MIDDLEWARE_SCOPE') || 'OrderAdmin OverrideTax OverrideShipping';
   },
 };
 

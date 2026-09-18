@@ -56,11 +56,17 @@ export const requestMiddlewareOrderCloudToken = async (): Promise<{
 
   configureServerSdk();
   const scope = commerceAuthConfig.middlewareScope.split(/\s+/).filter(Boolean) as ApiRole[];
-  const response = await Auth.ClientCredentials(
-    commerceAuthConfig.middlewareClientSecret,
-    commerceAuthConfig.middlewareClientId,
-    scope.length ? scope : undefined
-  );
+  let response;
+  try {
+    response = await Auth.ClientCredentials(
+      commerceAuthConfig.middlewareClientSecret,
+      commerceAuthConfig.middlewareClientId,
+      scope.length ? scope : undefined
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`OrderCloud middleware client_credentials failed (${scope.join(" ")}): ${message}`);
+  }
   if (!response.access_token || !response.expires_in) {
     throw new Error('OrderCloud token response did not include an access token');
   }
