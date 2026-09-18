@@ -10,6 +10,7 @@ export const toStripeCheckoutLineItems = (
     price_data: {
       currency: (cart.currency || "usd").toLowerCase(),
       unit_amount: Math.round((item.unitPrice ?? 0) * 100),
+      tax_behavior: "exclusive",
       product_data: {
         name: item.name,
         metadata: {
@@ -51,6 +52,8 @@ export const createHostedCheckoutSession = async (
     mode: "payment",
     line_items: toStripeCheckoutLineItems(cart),
     automatic_tax: { enabled: true },
+    billing_address_collection: "required",
+    customer_creation: "always",
     success_url: toStripeSuccessUrl(credentials.returnUrl),
     cancel_url: toCancelUrl(credentials.returnUrl),
     metadata: {

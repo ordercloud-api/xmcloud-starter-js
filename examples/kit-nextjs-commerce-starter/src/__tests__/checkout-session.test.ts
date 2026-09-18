@@ -25,6 +25,7 @@ describe("toStripeCheckoutLineItems", () => {
         price_data: {
           currency: "usd",
           unit_amount: 1250,
+          tax_behavior: "exclusive",
           product_data: {
             name: "Test product",
             metadata: {
