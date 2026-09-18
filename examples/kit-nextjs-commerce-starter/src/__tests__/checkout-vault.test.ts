@@ -50,6 +50,22 @@ describe("checkout Stripe vault", () => {
       "Invalid CHECKOUT_STRIPE_VAULT_JSON: expected a JSON object",
     );
 
+    expect(parseStripeVault(`'${sampleVault}'`)).toEqual({
+      "buyer-client-id": {
+        apiKey: "sk_test_123",
+        webhookSigningSecret: "whsec_123",
+        returnUrl: "http://localhost:3000/checkout/success",
+      },
+    });
+
+    expect(parseStripeVault(Buffer.from(sampleVault, "utf8").toString("base64"))).toEqual({
+      "buyer-client-id": {
+        apiKey: "sk_test_123",
+        webhookSigningSecret: "whsec_123",
+        returnUrl: "http://localhost:3000/checkout/success",
+      },
+    });
+
     process.env.CHECKOUT_STRIPE_VAULT_JSON = sampleVault;
     expect(() => getStripeCredentialsForClientId("other-client")).toThrow(
       'Missing required checkout configuration: CHECKOUT_STRIPE_VAULT_JSON["other-client"]',

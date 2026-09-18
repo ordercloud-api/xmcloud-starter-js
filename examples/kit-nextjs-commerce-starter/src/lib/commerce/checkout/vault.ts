@@ -8,6 +8,30 @@ export type StripeClientCredentials = {
 
 const VAULT_ENV_NAME = "CHECKOUT_STRIPE_VAULT_JSON";
 
+const unwrapEnvJson = (raw: string): string => {
+  const trimmed = raw.trim();
+  if (
+    (trimmed.startsWith("'") && trimmed.endsWith("'") && trimmed.length >= 2) ||
+    (trimmed.startsWith('"') && trimmed.endsWith('"') && trimmed.length >= 2)
+  ) {
+    return trimmed.slice(1, -1);
+  }
+  return trimmed;
+};
+
+const parseVaultJson = (raw: string): unknown => {
+  const text = unwrapEnvJson(raw);
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    try {
+      return JSON.parse(Buffer.from(text, "base64").toString("utf8")) as unknown;
+    } catch {
+      throw new Error(`Invalid ${VAULT_ENV_NAME}: expected a JSON object`);
+    }
+  }
+};
+
 const requireField = (
   entry: Record<string, unknown>,
   field: string,
@@ -43,12 +67,7 @@ const toCredentials = (
 export const parseStripeVault = (
   raw: string,
 ): Record<string, StripeClientCredentials> => {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw) as unknown;
-  } catch {
-    throw new Error(`Invalid ${VAULT_ENV_NAME}: expected a JSON object`);
-  }
+  const parsed = parseVaultJson(raw);
 
   const vault = asRecord(parsed);
   if (!vault) {
