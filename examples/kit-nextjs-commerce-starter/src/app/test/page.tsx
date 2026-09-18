@@ -29,7 +29,6 @@ type EndpointCheckResult = {
 const orderCloudUrl =
   process.env.NEXT_PUBLIC_ORDERCLOUD_BASE_API_URL?.trim() || 'https://sandboxapi.ordercloud.io';
 const clientId = process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID?.trim() || 'not set';
-const catalogId = process.env.NEXT_PUBLIC_ORDERCLOUD_CATALOG_ID?.trim() || 'not set';
 
 const CHECKS: EndpointCheck[] = [
   {
@@ -220,9 +219,6 @@ export default function CommerceDiagnosticsPage() {
       <div className="grid gap-2 rounded-lg border p-4 text-xs text-muted-foreground sm:grid-cols-2">
         <p>
           Origin: <span className="text-foreground">{origin}</span>
-        </p>
-        <p>
-          Catalog: <span className="text-foreground">{catalogId}</span>
         </p>
         <p className="sm:col-span-2">
           OrderCloud API: <span className="text-foreground break-all">{orderCloudUrl}</span>

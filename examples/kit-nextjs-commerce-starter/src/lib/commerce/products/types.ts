@@ -1,4 +1,4 @@
-import type { BuyerProduct, PriceSchedule } from 'ordercloud-javascript-sdk';
+import type { BuyerProduct, PriceSchedule } from "ordercloud-javascript-sdk";
 
 export type CommerceProduct = {
   id: string;
@@ -37,15 +37,36 @@ export type CommerceProductList = {
     pageSize?: number;
     totalCount?: number;
     totalPages?: number;
+    facets?: CommerceProductFacet[];
   };
 };
+
+export type CommerceProductFacet = {
+  name: string;
+  xpPath: string;
+  values: CommerceProductFacetValue[];
+};
+
+export type CommerceProductFacetValue = {
+  value: string;
+  count: number;
+};
+
+export type CommerceProductFilters = Record<
+  string,
+  string | string[] | number | boolean | undefined
+>;
 
 export interface ProductRequestOptions {
   signal?: AbortSignal;
 }
 
 export interface ListProductsOptions extends ProductRequestOptions {
+  catalogId?: string;
+  categoryId?: string;
   search?: string;
+  sortBy?: string[];
   page?: number;
   pageSize?: number;
+  filters?: CommerceProductFilters;
 }

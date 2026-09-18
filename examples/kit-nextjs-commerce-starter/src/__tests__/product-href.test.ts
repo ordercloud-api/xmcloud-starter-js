@@ -20,7 +20,9 @@ describe("buildProductDetailHref", () => {
   });
 
   it("strips trailing slashes before appending the product ID", () => {
-    expect(buildProductDetailHref("/products/", "SKU-1")).toBe("/products/SKU-1");
+    expect(buildProductDetailHref("/products/", "SKU-1")).toBe(
+      "/products/SKU-1",
+    );
     expect(buildProductDetailHref("/products///", "SKU-1")).toBe(
       "/products/SKU-1",
     );

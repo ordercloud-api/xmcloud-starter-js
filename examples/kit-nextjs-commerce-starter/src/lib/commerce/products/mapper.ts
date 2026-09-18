@@ -1,7 +1,4 @@
-import type {
-  CommerceProduct,
-  OrderCloudBuyerProduct,
-} from "./types";
+import type { CommerceProduct, OrderCloudBuyerProduct } from "./types";
 import { asFiniteNumber, asNonEmptyString, asRecord } from "../normalization";
 import { getProductImages, toProductHeroImage } from "./images";
 
@@ -21,9 +18,9 @@ const getPrice = (value: unknown): { price?: number; currency?: string } => {
 export const toCommerceProduct = (
   value: unknown,
 ): CommerceProduct | undefined => {
-  const product = value as OrderCloudBuyerProduct;
-  const id = asNonEmptyString(product?.ID);
-  const name = asNonEmptyString(product?.Name);
+  const product = value as OrderCloudBuyerProduct & Record<string, unknown>;
+  const id = asNonEmptyString(product?.ID ?? product?.id);
+  const name = asNonEmptyString(product?.Name ?? product?.name);
   if (!id || !name) return undefined;
 
   const xp = asRecord(product.xp);

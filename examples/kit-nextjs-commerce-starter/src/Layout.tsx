@@ -1,16 +1,16 @@
 import React, { JSX } from "react";
-import { Field, ImageField, Page, DesignLibraryApp } from "@sitecore-content-sdk/nextjs";
+import {
+  Field,
+  ImageField,
+  Page,
+  DesignLibraryApp,
+} from "@sitecore-content-sdk/nextjs";
 import Scripts from "src/Scripts";
 import SitecoreStyles from "components/content-sdk/SitecoreStyles";
 import { AppPlaceholder } from "@sitecore-content-sdk/nextjs";
-import HomeFeaturedProducts from "components/commerce/HomeFeaturedProducts";
 import ShoppingCart from "components/commerce/ShoppingCart";
 import { getCartDestinationFromRoute } from "src/lib/commerce/cart/destination";
-import {
-  isCartRoute,
-  isHomeRoute,
-  isPlaceholderEmpty,
-} from "src/lib/layout-route";
+import { isCartRoute, isPlaceholderEmpty } from "src/lib/layout-route";
 import componentMap from ".sitecore/component-map";
 
 interface LayoutProps {
@@ -75,10 +75,11 @@ const Layout = ({ page }: LayoutProps): JSX.Element => {
                     rendering={route}
                   />
                 )}
-                {route && isHomeRoute(route) && <HomeFeaturedProducts />}
                 {route &&
                   isCartRoute(route, getCartDestinationFromRoute(route)) &&
-                  isPlaceholderEmpty(route, "headless-main") && <ShoppingCart />}
+                  isPlaceholderEmpty(route, "headless-main") && (
+                    <ShoppingCart />
+                  )}
               </div>
             </main>
             <footer>

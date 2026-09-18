@@ -12,7 +12,7 @@ import * as ShoppingCart from 'src/components/shopping-cart/ShoppingCart';
 import * as RowSplitter from 'src/components/row-splitter/RowSplitter';
 import * as RichText from 'src/components/rich-text/RichText';
 import * as Promo from 'src/components/promo/Promo';
-import * as ProductListing from 'src/components/product-listing/ProductListing';
+import * as ProductList from 'src/components/product-list/ProductList';
 import * as ProductInfo from 'src/components/product-info/ProductInfo';
 import * as ProductImageGallery from 'src/components/product-image-gallery/ProductImageGallery';
 import * as ProductContainer from 'src/components/product-container/ProductContainer';
@@ -36,7 +36,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['RowSplitter', { ...RowSplitter }],
   ['RichText', { ...RichText }],
   ['Promo', { ...Promo }],
-  ['ProductListing', { ...ProductListing }],
+  ['ProductList', { ...ProductList }],
   ['ProductInfo', { ...ProductInfo, componentType: 'client' }],
   ['ProductImageGallery', { ...ProductImageGallery, componentType: 'client' }],
   ['ProductContainer', { ...ProductContainer }],

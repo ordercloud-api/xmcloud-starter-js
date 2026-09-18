@@ -1,5 +1,4 @@
 import { Me, type Spec, type Variant } from "ordercloud-javascript-sdk";
-import { getCommerceBrowserConfig } from "../browser-config";
 import type { CommerceRequest } from "../client";
 import { toCommerceProduct } from "./mapper";
 import type {
@@ -25,16 +24,80 @@ const asNonNegativeInteger = (value: unknown): number | undefined =>
     ? value
     : undefined;
 
+const getProperty = (value: unknown, ...names: string[]): unknown => {
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    return undefined;
+  const record = value as Record<string, unknown>;
+  const key = Object.keys(record).find((candidate) =>
+    names.some((name) => candidate.toLowerCase() === name.toLowerCase()),
+  );
+  return key ? record[key] : undefined;
+};
+
+const getListItems = (value: unknown): unknown[] => {
+  const items = getProperty(value, "Items", "items");
+  return Array.isArray(items) ? items : [];
+};
+
 const getMeta = (value: unknown): CommerceProductList["meta"] => {
   if (!value || typeof value !== "object" || Array.isArray(value))
     return undefined;
   const meta = value as Record<string, unknown>;
+  const facetsValue = getProperty(meta, "Facets", "facets");
+  const facets = Array.isArray(facetsValue)
+    ? facetsValue.flatMap((facetValue) => {
+        if (
+          !facetValue ||
+          typeof facetValue !== "object" ||
+          Array.isArray(facetValue)
+        ) {
+          return [];
+        }
+        const facet = facetValue as Record<string, unknown>;
+        const nameValue = getProperty(facet, "Name", "name");
+        const name = typeof nameValue === "string" ? nameValue.trim() : "";
+        const xpPathValue = getProperty(facet, "XpPath", "xpPath");
+        const xpPath =
+          typeof xpPathValue === "string" ? xpPathValue.trim() : "";
+        if (!name || !xpPath) return [];
+
+        const facetValues = getProperty(facet, "Values", "values");
+        const values = Array.isArray(facetValues)
+          ? facetValues.flatMap((itemValue) => {
+              if (
+                !itemValue ||
+                typeof itemValue !== "object" ||
+                Array.isArray(itemValue)
+              ) {
+                return [];
+              }
+              const item = itemValue as Record<string, unknown>;
+              const itemText = getProperty(item, "Value", "value");
+              const facetItemValue =
+                typeof itemText === "string" ? itemText.trim() : "";
+              const count = asNonNegativeInteger(
+                getProperty(item, "Count", "count"),
+              );
+              return facetItemValue && count !== undefined
+                ? [{ value: facetItemValue, count }]
+                : [];
+            })
+          : [];
+
+        return [{ name, xpPath, values }];
+      })
+    : [];
 
   return {
-    page: asPositiveInteger(meta.Page),
-    pageSize: asPositiveInteger(meta.PageSize),
-    totalCount: asNonNegativeInteger(meta.TotalCount),
-    totalPages: asNonNegativeInteger(meta.TotalPages),
+    page: asPositiveInteger(getProperty(meta, "Page", "page")),
+    pageSize: asPositiveInteger(getProperty(meta, "PageSize", "pageSize")),
+    totalCount: asNonNegativeInteger(
+      getProperty(meta, "TotalCount", "totalCount"),
+    ),
+    totalPages: asNonNegativeInteger(
+      getProperty(meta, "TotalPages", "totalPages"),
+    ),
+    facets,
   };
 };
 
@@ -42,27 +105,27 @@ export class ProductsService {
   constructor(private readonly request: CommerceRequest) {}
 
   async list(options: ListProductsOptions = {}): Promise<CommerceProductList> {
-    const catalogId = getCommerceBrowserConfig().catalogId;
     const response = await this.request((requestOptions) => {
       const optionsWithSignal = { ...requestOptions, signal: options.signal };
       return Me.ListProducts<OrderCloudBuyerProduct>(
         {
-          catalogID: catalogId,
+          catalogID: options.catalogId?.trim() || undefined,
+          categoryID: options.categoryId?.trim() || undefined,
           search: options.search?.trim() || undefined,
+          sortBy: options.sortBy,
           page: options.page,
           pageSize: options.pageSize,
+          filters: options.filters,
         },
         optionsWithSignal,
       );
     });
 
     return {
-      items: Array.isArray(response.Items)
-        ? response.Items.map(toCommerceProduct).filter(
-            (product): product is CommerceProduct => !!product,
-          )
-        : [],
-      meta: getMeta(response.Meta),
+      items: getListItems(response)
+        .map(toCommerceProduct)
+        .filter((product): product is CommerceProduct => !!product),
+      meta: getMeta(getProperty(response, "Meta", "meta")),
     };
   }
 

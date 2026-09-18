@@ -3,7 +3,6 @@ export interface CommerceBrowserConfig {
   authCookieName: string;
   clientId: string;
   anonymousScope?: string;
-  catalogId?: string;
 }
 
 export const DEFAULT_ORDERCLOUD_AUTH_COOKIE_NAME = 'oc_anonymous_token';
@@ -49,6 +48,5 @@ export const getCommerceBrowserConfig = (): CommerceBrowserConfig => {
     authCookieName: getOrderCloudAuthCookieName(),
     clientId,
     anonymousScope: process.env.NEXT_PUBLIC_ORDERCLOUD_ANONYMOUS_SCOPE?.trim() || undefined,
-    catalogId: process.env.NEXT_PUBLIC_ORDERCLOUD_CATALOG_ID?.trim() || undefined,
   };
 };
