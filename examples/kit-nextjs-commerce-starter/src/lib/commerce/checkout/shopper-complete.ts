@@ -1,6 +1,8 @@
 import "server-only";
 import type { Order } from "ordercloud-javascript-sdk";
 import { orderCloudRequest } from "@/lib/commerce/auth/client";
+import { isMiddlewareConfigured } from "@/lib/commerce/auth/config";
+import { completeIncomingCheckout } from "./incoming";
 import { getStripeClientForApiKey } from "./stripe-client";
 import { getStripeCredentialsForClientId } from "./vault";
 import {
@@ -22,6 +24,8 @@ const isIgnorableSubmitError = (error: unknown): boolean => {
   return /already submitted|not unsubmitted|role/i.test(message);
 };
 
+const orderMissingStripeTax = (order: Order<OrderXp>): boolean => !(Number(order.TaxCost) > 0);
+
 export const syncShopperCheckoutFromStripe = async (
   order: Order<OrderXp>,
   shopperToken: string,
@@ -29,7 +33,8 @@ export const syncShopperCheckoutFromStripe = async (
   stripeSessionId?: string,
 ): Promise<GatewayCheckoutStatus> => {
   const current = toGatewayCheckoutStatus(order.xp?.CheckoutStatus);
-  if (isTerminalCheckoutStatus(current)) return current;
+  const shouldBackfillTax = isMiddlewareConfigured() && orderMissingStripeTax(order);
+  if (isTerminalCheckoutStatus(current) && !shouldBackfillTax) return current;
 
   const orderId = order.ID?.trim();
   const sessionId = stripeSessionId?.trim() || order.xp?.stripeSessionId?.trim();
@@ -41,8 +46,17 @@ export const syncShopperCheckoutFromStripe = async (
   );
 
   const paid = session.payment_status === "paid" || session.status === "complete";
-  const nextStatus: GatewayCheckoutStatus = paid ? "Completed" : session.status === "expired" ? "Failed" : current;
+  const nextStatus: GatewayCheckoutStatus = paid
+    ? "Completed"
+    : session.status === "expired"
+      ? "Failed"
+      : current;
   if (nextStatus === "Pending") return current;
+
+  if (isMiddlewareConfigured()) {
+    await completeIncomingCheckout(session, { shopperToken });
+    return nextStatus;
+  }
 
   if (paid && (order.Status === "Unsubmitted" || !order.Status)) {
     try {

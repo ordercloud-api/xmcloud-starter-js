@@ -42,9 +42,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
+  const stripe = getStripeClientForApiKey(credentials.apiKey);
+
   let event: Stripe.Event;
   try {
-    event = getStripeClientForApiKey(credentials.apiKey).webhooks.constructEvent(
+    event = stripe.webhooks.constructEvent(
       rawBody,
       signature,
       credentials.webhookSigningSecret,
@@ -54,12 +56,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
-  const session = event.data.object as Stripe.Checkout.Session;
-  const verifiedClientId = session.metadata?.ClientID?.trim();
+  const eventSession = event.data.object as Stripe.Checkout.Session;
+  const verifiedClientId = eventSession.metadata?.ClientID?.trim();
   if (!verifiedClientId || verifiedClientId.toLowerCase() !== clientId.toLowerCase()) {
     return NextResponse.json(
       { error: "Verified metadata.ClientID does not match the signing secret lookup" },
       { status: 400 },
+    );
+  }
+
+  let session = eventSession;
+  try {
+    if (eventSession.id) {
+      session = await stripe.checkout.sessions.retrieve(eventSession.id);
+    }
+  } catch (error) {
+    console.warn(
+      "[stripe/complete] Falling back to webhook session; retrieve failed:",
+      error instanceof Error ? error.message : error,
     );
   }
 

@@ -13,6 +13,7 @@ import {
 type CheckoutStatusPayload = {
   orderId: string;
   checkoutStatus: GatewayCheckoutStatus;
+  taxCost?: number;
   error?: string;
 };
 
@@ -63,7 +64,11 @@ function CheckoutSuccessContent() {
         setStatus(payload);
         setError(null);
 
-        if (!isTerminalCheckoutStatus(payload.checkoutStatus)) {
+        const taxOnOrder = (payload.taxCost ?? 0) > 0;
+        const finished =
+          isTerminalCheckoutStatus(payload.checkoutStatus) &&
+          (taxOnOrder || attemptRef.current >= 8);
+        if (!finished) {
           attemptRef.current += 1;
           timeoutId = setTimeout(poll, pollDelayMs(attemptRef.current));
         }
