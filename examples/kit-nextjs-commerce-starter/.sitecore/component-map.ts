@@ -21,6 +21,7 @@ import * as PageContent from 'src/components/page-content/PageContent';
 import * as Navigation from 'src/components/navigation/Navigation';
 import * as LinkList from 'src/components/link-list/LinkList';
 import * as Image from 'src/components/image/Image';
+import * as FeaturedProducts from 'src/components/featured-products/FeaturedProducts';
 import * as Container from 'src/components/container/Container';
 import * as ColumnSplitter from 'src/components/column-splitter/ColumnSplitter';
 import * as CartButton from 'src/components/cart-button/CartButton';
@@ -45,6 +46,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['Navigation', { ...Navigation }],
   ['LinkList', { ...LinkList }],
   ['Image', { ...Image }],
+  ['FeaturedProducts', { ...FeaturedProducts }],
   ['Container', { ...Container }],
   ['ColumnSplitter', { ...ColumnSplitter }],
   ['CartButton', { ...CartButton }],

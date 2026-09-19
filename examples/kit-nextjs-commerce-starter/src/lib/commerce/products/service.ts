@@ -141,17 +141,33 @@ export class ProductsService {
       ),
     ];
 
-    const items = (
-      await Promise.all(
-        uniqueIds.map(async (productId) => {
-          try {
-            return await this.get(productId, options);
-          } catch {
-            return undefined;
-          }
-        }),
-      )
-    ).filter((product): product is CommerceProduct => !!product);
+    if (uniqueIds.length === 0) {
+      return {
+        items: [],
+        meta: { totalCount: 0 },
+      };
+    }
+
+    const response = await this.request((requestOptions) => {
+      const optionsWithSignal = { ...requestOptions, signal: options.signal };
+      return Me.ListProducts<OrderCloudBuyerProduct>(
+        {
+          pageSize: uniqueIds.length,
+          filters: { ID: uniqueIds.join("|") },
+        },
+        optionsWithSignal,
+      );
+    });
+    const productsById = new Map(
+      getListItems(response)
+        .map(toCommerceProduct)
+        .filter((product): product is CommerceProduct => !!product)
+        .map((product): [string, CommerceProduct] => [product.id, product]),
+    );
+    const items = uniqueIds.flatMap((productId) => {
+      const product = productsById.get(productId);
+      return product ? [product] : [];
+    });
 
     return {
       items,
