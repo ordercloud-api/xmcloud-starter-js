@@ -137,7 +137,7 @@ export default function OrderCloudProductPicker({
 
   const selectedSummary = multiple
     ? `${selected.length} selected`
-    : selected[0]?.name ?? selected[0]?.id;
+    : selected[0]?.id;
 
   return (
     <main className="mx-auto min-h-screen max-w-3xl space-y-5 bg-white p-6 text-slate-950">
@@ -197,9 +197,7 @@ export default function OrderCloudProductPicker({
                   type={multiple ? 'checkbox' : 'radio'}
                   name="product"
                   checked={isSelected}
-                  onChange={() =>
-                    selectProduct({ id: product.id, name: product.name })
-                  }
+                  onChange={() => selectProduct({ id: product.id })}
                   className="mt-1"
                 />
                 {(product.thumbnailUrl ?? product.imageUrl) && (

@@ -4,36 +4,14 @@ export type ProductSource = "last-url-segment" | "ordercloud-picker";
 
 export type ProductReference = {
   id: string;
-  name?: string;
 };
 
 export const parseProductReference = (
   value: unknown,
 ): ProductReference | undefined => {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    const record = value as Record<string, unknown>;
-    const id =
-      asNonEmptyString(record.id, { trim: true }) ??
-      asNonEmptyString(record.productId, { trim: true }) ??
-      asNonEmptyString(record.ID, { trim: true });
-    if (!id) return undefined;
-    return {
-      id,
-      name:
-        asNonEmptyString(record.name, { trim: true }) ??
-        asNonEmptyString(record.Name, { trim: true }),
-    };
-  }
-
-  const text = asNonEmptyString(value, { trim: true });
-  if (!text) return undefined;
-
-  try {
-    return parseProductReference(JSON.parse(text) as unknown);
-  } catch {
-    // Plain string values keep existing data usable while the picker writes JSON references.
-    return { id: text };
-  }
+  const id = asNonEmptyString(value, { trim: true });
+  if (!id || id.startsWith("{") || id.startsWith("[")) return undefined;
+  return { id };
 };
 
 export const normalizeProductSource = (
@@ -84,4 +62,4 @@ export const resolveProductId = ({
 
 export const serializeProductReference = (
   reference: ProductReference,
-): string => JSON.stringify({ id: reference.id, name: reference.name });
+): string => reference.id;

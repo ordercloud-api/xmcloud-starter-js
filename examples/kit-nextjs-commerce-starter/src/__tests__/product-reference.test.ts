@@ -8,13 +8,19 @@ import {
 
 describe("product references", () => {
   it("round trips picker values", () => {
-    const reference = { id: "SKU/123", name: "Headphones" };
+    const reference = { id: "SKU/123" };
     expect(parseProductReference(serializeProductReference(reference))).toEqual(
       reference,
     );
   });
 
-  it("accepts plain IDs for backwards-compatible field values", () => {
+  it("does not accept structured references", () => {
+    expect(
+      parseProductReference('{"id":"SKU-123","name":"Headphones"}'),
+    ).toBeUndefined();
+  });
+
+  it("accepts plain IDs", () => {
     expect(parseProductReference("SKU-123")).toEqual({ id: "SKU-123" });
   });
 

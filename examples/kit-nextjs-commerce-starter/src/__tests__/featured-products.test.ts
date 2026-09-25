@@ -12,10 +12,7 @@ describe("featured products configuration", () => {
     const fields = {
       Heading: { value: "Staff picks" },
       Products: {
-        value: JSON.stringify([
-          { id: "P-2", name: "Second" },
-          { id: "P-1", name: "First" },
-        ]),
+        value: "P-2\nP-1",
       },
       "Call To Action": {
         value: { href: "/products", text: "Shop all" },
@@ -37,7 +34,7 @@ describe("featured products configuration", () => {
         datasource: {
           heading: { jsonValue: { value: "New arrivals" } },
           products: {
-            jsonValue: { value: '[{"id":"P-3"},{"id":"P-4"}]' },
+            jsonValue: { value: "P-3\nP-4" },
           },
           callToAction: {
             jsonValue: {

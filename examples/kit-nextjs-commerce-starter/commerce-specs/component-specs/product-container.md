@@ -40,8 +40,8 @@ The code reads these exact-cased field names first (`Product Source`, `Product I
 ```ts
 type ProductContainerDatasource = {
   productSource? | ProductSource? | "Product Source"?: string (or { value } / { jsonValue: { value } });
-  productId? | ProductId? | "Product ID"?: string | ProductReference (or field-wrapped);
-  previewProductId? | PreviewProductId? | "Preview Product ID"?: string | ProductReference (or field-wrapped);
+  productId? | ProductId? | "Product ID"?: string (or field-wrapped);
+  previewProductId? | PreviewProductId? | "Preview Product ID"?: string (or field-wrapped);
 };
 ```
 

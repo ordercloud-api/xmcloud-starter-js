@@ -5,30 +5,24 @@ import {
 } from "../lib/commerce/products/list-source";
 
 describe("product list source", () => {
-  it("parses picker JSON, arrays, and comma-separated IDs", () => {
+  it("reads and writes newline-delimited IDs", () => {
     expect(
       parseProductReferenceList(
-        serializeProductReferenceList([
-          { id: "SKU-1", name: "One" },
-          { id: "SKU/2", name: "Two" },
-        ]),
+        serializeProductReferenceList([{ id: "SKU-1" }, { id: "SKU/2" }]),
       ),
-    ).toEqual([
-      { id: "SKU-1", name: "One" },
-      { id: "SKU/2", name: "Two" },
-    ]);
-    expect(parseProductReferenceList({ id: "SKU-1", name: "One" })).toEqual([
-      { id: "SKU-1", name: "One" },
-    ]);
-    expect(parseProductReferenceList("SKU-1, SKU-2")).toEqual([
+    ).toEqual([{ id: "SKU-1" }, { id: "SKU/2" }]);
+    expect(parseProductReferenceList("SKU-1\nSKU-2")).toEqual([
       { id: "SKU-1" },
       { id: "SKU-2" },
     ]);
     expect(parseProductReferenceList(undefined)).toEqual([]);
+    expect(parseProductReferenceList('[{"id":"SKU-3"}]')).toEqual([]);
+    expect(parseProductReferenceList({ id: "SKU-1" })).toEqual([]);
+  });
+
+  it("serializes multiple products as one ID per line", () => {
     expect(
-      parseProductReferenceList({
-        targetItems: [{ ID: "SKU-3", Name: "Three" }],
-      }),
-    ).toEqual([{ id: "SKU-3", name: "Three" }]);
+      serializeProductReferenceList([{ id: "SKU-1" }, { id: "SKU-2" }]),
+    ).toBe("SKU-1\nSKU-2");
   });
 });
