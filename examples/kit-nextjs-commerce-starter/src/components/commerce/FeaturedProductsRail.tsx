@@ -12,8 +12,12 @@ import { useOrderCloud } from "@/contexts/OrderCloudContext";
 import { buildProductDetailHref } from "@/lib/commerce/products/href";
 import type { CommerceProduct } from "@/lib/commerce/products/types";
 import OrderCloudProductCard from "./OrderCloudProductCard";
+import AuthoringProductField, {
+  type AuthoringProductFieldConfig,
+} from "./AuthoringProductField";
 
 type FeaturedProductsRailProps = {
+  authoringField?: AuthoringProductFieldConfig;
   detailPageHref: string;
   header?: ReactNode;
   isAuthoring: boolean;
@@ -42,6 +46,7 @@ const ProductSkeleton = () => (
 );
 
 export default function FeaturedProductsRail({
+  authoringField,
   detailPageHref,
   header,
   isAuthoring,
@@ -52,12 +57,15 @@ export default function FeaturedProductsRail({
   const [products, setProducts] = useState<CommerceProduct[]>([]);
   const [loading, setLoading] = useState(productIds.length > 0);
   const [error, setError] = useState(false);
+  const [effectiveProductIds, setEffectiveProductIds] = useState(productIds);
   const [scrollState, setScrollState] =
     useState<ScrollState>(EMPTY_SCROLL_STATE);
   const railRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => setEffectiveProductIds(productIds), [productIds]);
+
   useEffect(() => {
-    if (productIds.length === 0) {
+    if (effectiveProductIds.length === 0) {
       setProducts([]);
       setLoading(false);
       setError(false);
@@ -76,7 +84,7 @@ export default function FeaturedProductsRail({
     setError(false);
 
     void productsService
-      .listByIds(productIds, { signal: controller.signal })
+      .listByIds(effectiveProductIds, { signal: controller.signal })
       .then((response) => {
         if (!controller.signal.aborted) setProducts(response.items);
       })
@@ -91,7 +99,16 @@ export default function FeaturedProductsRail({
       });
 
     return () => controller.abort();
-  }, [productIds, productsService, status]);
+  }, [effectiveProductIds, productsService, status]);
+
+  const authoringEditor =
+    isAuthoring && authoringField ? (
+      <AuthoringProductField
+        {...authoringField}
+        initialIds={effectiveProductIds}
+        onSaved={setEffectiveProductIds}
+      />
+    ) : null;
 
   const updateScrollState = useCallback(() => {
     const rail = railRef.current;
@@ -105,8 +122,7 @@ export default function FeaturedProductsRail({
     setScrollState({
       hasOverflow,
       canScrollBackward: hasOverflow && rail.scrollLeft > 1,
-      canScrollForward:
-        hasOverflow && rail.scrollLeft < maximumScrollLeft - 1,
+      canScrollForward: hasOverflow && rail.scrollLeft < maximumScrollLeft - 1,
     });
   }, []);
 
@@ -137,12 +153,13 @@ export default function FeaturedProductsRail({
     });
   };
 
-  if (productIds.length === 0) {
+  if (effectiveProductIds.length === 0) {
     return isAuthoring ? (
       <>
         {header}
+        {authoringEditor}
         <p className="rounded border border-dashed border-slate-300 p-4 text-sm text-slate-600">
-          Choose products in the component properties.
+          Choose products above to populate this component.
         </p>
       </>
     ) : null;
@@ -152,6 +169,7 @@ export default function FeaturedProductsRail({
     return (
       <>
         {header}
+        {authoringEditor}
         <p
           role="alert"
           className="rounded border border-slate-200 bg-slate-50 p-4 text-sm"
@@ -166,6 +184,7 @@ export default function FeaturedProductsRail({
     return isAuthoring ? (
       <>
         {header}
+        {authoringEditor}
         <p className="rounded border border-dashed border-slate-300 p-4 text-sm text-slate-600">
           The selected products are not visible to the current shopper.
         </p>
@@ -175,7 +194,7 @@ export default function FeaturedProductsRail({
 
   const visibleItemCount = Math.min(
     maxProductsPerRow,
-    loading ? productIds.length : products.length,
+    loading ? effectiveProductIds.length : products.length,
   );
   const cardBasis = `calc((100% - ${(maxProductsPerRow - 1) * 16}px) / ${maxProductsPerRow})`;
   const railStyle = {
@@ -185,6 +204,7 @@ export default function FeaturedProductsRail({
   return (
     <>
       {header}
+      {authoringEditor}
       <div className="space-y-3">
         {scrollState.hasOverflow && (
           <div className="flex justify-end gap-2">
@@ -220,7 +240,7 @@ export default function FeaturedProductsRail({
                 <div
                   key={`featured-product-skeleton-${index}`}
                   className={`${
-                    productIds.length === 1
+                    effectiveProductIds.length === 1
                       ? "w-full"
                       : "w-[82%] sm:w-[calc((100%_-_1rem)/2)] lg:w-[var(--featured-product-basis)]"
                   } shrink-0 snap-start`}

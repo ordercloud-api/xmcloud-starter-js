@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import FeaturedProductsRail from "./FeaturedProductsRail";
+import type { AuthoringProductFieldConfig } from "./AuthoringProductField";
 
 type FeaturedProductsSectionProps = {
+  authoringField?: AuthoringProductFieldConfig;
   componentName: string;
   detailPageHref: string;
   header?: ReactNode;
@@ -13,6 +15,7 @@ type FeaturedProductsSectionProps = {
 };
 
 export default function FeaturedProductsSection({
+  authoringField,
   componentName,
   detailPageHref,
   header,
@@ -30,6 +33,7 @@ export default function FeaturedProductsSection({
       data-class-change
     >
       <FeaturedProductsRail
+        authoringField={authoringField}
         detailPageHref={detailPageHref}
         header={header}
         isAuthoring={isAuthoring}

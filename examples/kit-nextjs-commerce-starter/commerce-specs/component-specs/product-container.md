@@ -27,13 +27,15 @@ Composition root for a single product's UI. `ProductContainer` doesn't render an
 - Linked Placeholder Settings item: `/sitecore/layout/Placeholder Settings/Project/commerce`
 - No custom rendering-parameter fields beyond base (`styles`, `RenderingIdentifier`) — `DynamicPlaceholderId` is a standard dynamic-placeholder parameter, not a custom field.
 
-| Field | Type | Source | Standard Values default |
-|---|---|---|---|
-| `Product Source` | Droplist | `/sitecore/System/Settings/Project/commerce/Product Sources` | `OrderCloud Picker` |
-| `Product ID` | Plugin (custom OrderCloud product picker, field-type id `d232ba1e-40fe-46c5-915a-2f46d0df87f5`) | — | — |
-| `Preview Product ID` | Plugin (same custom picker) | — | — |
+| Field                | Type                                                                                            | Source                                                       | Standard Values default |
+| -------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ----------------------- |
+| `Product Source`     | Droplist                                                                                        | `/sitecore/System/Settings/Project/commerce/Product Sources` | `OrderCloud Picker`     |
+| `Product ID`         | Plugin (custom OrderCloud product picker, field-type id `d232ba1e-40fe-46c5-915a-2f46d0df87f5`) | —                                                            | —                       |
+| `Preview Product ID` | Plugin (same custom picker)                                                                     | —                                                            | —                       |
 
 The code reads these exact-cased field names first (`Product Source`, `Product ID`, `Preview Product ID`); camelCase/PascalCase variants (`productSource`, `ProductSource`, etc.) are checked as fallbacks but never match real authored content in this environment — they exist only for defensiveness. See `getNamedField` in `ProductContainer.tsx`.
+
+While comparing authoring approaches, these fields remain Plugin fields so the Marketplace app can still be opened. The ProductContainer also renders a picker directly in the Pages canvas. Both approaches save only the OrderCloud product ID. After the comparison, the fields can be changed to Single-Line Text if the Marketplace app is removed.
 
 ## Props / datasource shape (`product-container.props.ts`)
 
@@ -52,10 +54,11 @@ Rendering params consumed: `params.styles`, `params.RenderingIdentifier`, `param
 ## Behavior
 
 1. Reads `Product Source` → normalized via `normalizeProductSource()` (`lib/commerce/products/reference.ts`) to `"last-url-segment" | "ordercloud-picker" | undefined`. Matching is substring/case-insensitive (`includes("picker")`, `includes("url")`), so `"OrderCloud Picker"`, `"picker"`, etc. all resolve to `"ordercloud-picker"`.
-2. Reads `Product ID` and `Preview Product ID` → parsed via `parseProductReference()` into `{ id, name? }`. Accepts a plain string, a JSON-string reference, or an already-structured object (checks `id`/`productId`/`ID` keys).
-3. Renders a `<section>` wrapper (`data-component="ProductContainer"`, `data-class-change`) with `params.styles` / `params.RenderingIdentifier`, wrapping everything in `ProductDataProvider` (`source`, `selectedProduct`, `previewProduct`, `isAuthoring`).
-4. Inside the provider, renders `AppPlaceholder` (`@sitecore-content-sdk/nextjs`) named `product-container-{params.DynamicPlaceholderId ?? "0"}`, passing through `rendering`, `page`, and the component map — this is what makes the placeholder "dynamic" (authors can add multiple `ProductContainer` instances on one page, each with its own placeholder key and independent product context).
-5. `isAuthoring = page.mode.isEditing || page.mode.isDesignLibrary` is passed to the provider so it knows whether to fall back to `Preview Product ID` when there's no concrete product in the URL (see below).
+2. Reads `Product ID` and `Preview Product ID` as plain OrderCloud IDs. Structured/JSON references are intentionally unsupported.
+3. In authoring mode, shows an in-component selector for `Product ID` in picker mode or `Preview Product ID` in URL mode. Saving writes the ID through the Sitecore Authoring and Management API and refreshes product context immediately.
+4. Renders a `<section>` wrapper (`data-component="ProductContainer"`, `data-class-change`) with `params.styles` / `params.RenderingIdentifier`, wrapping everything in `ProductDataProvider` (`source`, `selectedProduct`, `previewProduct`, `isAuthoring`).
+5. Inside the provider, renders `AppPlaceholder` (`@sitecore-content-sdk/nextjs`) named `product-container-{params.DynamicPlaceholderId ?? "0"}`, passing through `rendering`, `page`, and the component map — this is what makes the placeholder "dynamic" (authors can add multiple `ProductContainer` instances on one page, each with its own placeholder key and independent product context).
+6. `isAuthoring = page.mode.isEditing || page.mode.isDesignLibrary` is passed to the provider so it knows whether to fall back to `Preview Product ID` when there's no concrete product in the URL (see below).
 
 ## Product ID resolution (delegated to `ProductDataProvider` → `resolveProductId()`)
 
