@@ -1,0 +1,57 @@
+﻿---
+ID: "b2822815-a5a3-452a-b726-10b1e410617f"
+Parent: "7a93edd1-c6b2-4855-a3b2-4241dcb15a55"
+Template: "7a93edd1-c6b2-4855-a3b2-4241dcb15a55"
+Path: /sitecore/templates/Project/commerce/Rendering Parameters/ProductList Parameters/__Standard Values
+Languages:
+- Language: en
+  Versions:
+  - Version: 1
+    Fields:
+    - ID: "22cf9e05-14a9-45f4-8424-8d8f05858451"
+      Hint: Show Search Bar
+      Value: 1
+    - ID: "25bed78c-4957-4165-998a-ca1b52f67497"
+      Hint: __Created
+      Value: 20260917T202320Z
+    - ID: "2e590bd6-7ab9-417f-9f9d-c69af1e0651c"
+      Hint: Maximum Products Per Row
+      Value: 4
+    - ID: "48f5bd6d-f16d-49cb-8dc9-45c707ef3171"
+      Hint: Product Detail Page Path
+      Value: /products
+    - ID: "52807595-0f8f-4b20-8d2a-cb71d28c6103"
+      Hint: __Owner
+      Value: |
+        sitecore\crhistian.ramirez@sitecore.com
+    - ID: "5dd74568-4d4b-44c1-b513-0af5f4cda34f"
+      Hint: __Created by
+      Value: |
+        sitecore\crhistian.ramirez@sitecore.com
+    - ID: "6bf5d3a7-774d-4fdb-b5a9-69327f9e99e2"
+      Hint: Show Sort
+      Value: 1
+    - ID: "8ab6b671-b750-428c-b0c7-796d82d8eb7b"
+      Hint: Sort Options
+      Value: |
+        Default=
+        Name: A–Z=Name
+        Name: Z–A=!Name
+        Price: low to high=xp.Price
+        Price: high to low=!xp.Price
+    - ID: "8cdc337e-a112-42fb-bbb4-4143751e123f"
+      Hint: __Revision
+      Value: "c7f14a72-7a97-454e-868b-c8290afc640b"
+    - ID: "badd9cf9-53e0-4d0c-bcc0-2d784c282f6a"
+      Hint: __Updated by
+      Value: |
+        sitecore\crhistian.ramirez@sitecore.com
+    - ID: "d78b39d0-a9f2-4477-9e22-a960bb14cd7e"
+      Hint: Show Filters
+      Value: 1
+    - ID: "d9cf14b1-fa16-4ba6-9288-e8a174d4d522"
+      Hint: __Updated
+      Value: 20260918T160205Z
+    - ID: "e91135e9-0403-4d9e-8a79-faf4497fc4b7"
+      Hint: Results Per Page
+      Value: 20

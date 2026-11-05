@@ -17,15 +17,6 @@ SharedFields:
     query ProductListingQuery($datasource: String!, $language: String!) {
       datasource: item(path: $datasource, language: $language) {
         id
-        productListSource: field(name: "productListSource") {
-          jsonValue
-        }
-        orderCloudProducts: field(name: "orderCloudProducts") {
-          jsonValue
-        }
-        detailPage: field(name: "detailPage") {
-          jsonValue
-        }
         ... on ProductListing {
           title {
             jsonValue
@@ -70,18 +61,28 @@ SharedFields:
     }
 - ID: "1a7c85e5-dc0b-490d-9187-bb1dbcb4c72f"
   Hint: Datasource Template
-  Value: "/sitecore/templates/Project/click-click-launch/Components/Product/Product Listing"
+  Value: 
 - ID: "a77e8568-1ab3-44f1-a664-b7c37ec7810d"
   Hint: Parameters Template
   Value: "{8783A1B7-1609-488F-8390-F0F8BF4311FA}"
 - ID: "b5b27af1-25ef-405c-87ce-369b3a004016"
   Hint: Datasource Location
-  Value: "query:$site/*[@@name='Data']/*[@@templatename='Product Listings Folder']|query:$sharedSites/*[@@name='Data']/*[@@templatename='Product Listings Folder']"
+  Value: 
 - ID: "dbbbeca1-21c7-4906-9dd2-493c1efa59a2"
   Hint: __Shared revision
-  Value: "33cb87b3-983c-452b-8f07-0fc3fb1c13ea"
+  Value: "327c11b4-592c-43ef-b2db-eecd4bd5ec32"
+- ID: "f6677a49-0a1d-4bad-b8ba-4f0f22bdee64"
+  Hint: Additional compatible templates
+  Value: "{46D29149-02AB-4EF1-AF37-E765E26A7E2F}"
 Languages:
 - Language: en
+  Fields:
+  - ID: "30e85e5d-e00a-4864-b358-7624d511deb4"
+    Hint: __Unversioned revision
+    Value: "2672a88c-59f2-43d7-a967-92a0c29227c0"
+  - ID: "b5e02ad9-d56f-4c41-a065-a133db87bdeb"
+    Hint: __Display name
+    Value: Product Listing
   Versions:
   - Version: 1
     Fields:
@@ -98,11 +99,11 @@ Languages:
         sitecore\alex.jackson@velir.com
     - ID: "8cdc337e-a112-42fb-bbb4-4143751e123f"
       Hint: __Revision
-      Value: "553052a3-c7b3-4aaf-8fb8-1b685755626d"
+      Value: "9629f32f-0bba-4ea1-93cc-58d0fd65280a"
     - ID: "badd9cf9-53e0-4d0c-bcc0-2d784c282f6a"
       Hint: __Updated by
       Value: |
-        sitecore\richard.seal@sitecore.com
+        sitecore\crhistian.ramirez@sitecore.com
     - ID: "d9cf14b1-fa16-4ba6-9288-e8a174d4d522"
       Hint: __Updated
-      Value: 20250710T233300Z
+      Value: 20260912T205806Z

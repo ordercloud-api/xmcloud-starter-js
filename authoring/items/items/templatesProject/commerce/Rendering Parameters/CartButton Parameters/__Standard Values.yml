@@ -1,0 +1,30 @@
+﻿---
+ID: "0a389ef5-6077-41ee-889f-b63859e46cf2"
+Parent: "4219220f-0c75-4a84-a042-f2bdfe80ffde"
+Template: "4219220f-0c75-4a84-a042-f2bdfe80ffde"
+Path: /sitecore/templates/Project/commerce/Rendering Parameters/CartButton Parameters/__Standard Values
+Languages:
+- Language: en
+  Versions:
+  - Version: 1
+    Fields:
+    - ID: "25bed78c-4957-4165-998a-ca1b52f67497"
+      Hint: __Created
+      Value: 20260919T000000Z
+    - ID: "5dd74568-4d4b-44c1-b513-0af5f4cda34f"
+      Hint: __Created by
+      Value: |
+        sitecore\Admin
+    - ID: "79822541-2296-4350-8499-2348b42cc5a4"
+      Hint: Show Cart Link
+      Value: 1
+    - ID: "8cdc337e-a112-42fb-bbb4-4143751e123f"
+      Hint: __Revision
+      Value: "684a8089-c5d2-4b38-937e-f103378f238d"
+    - ID: "badd9cf9-53e0-4d0c-bcc0-2d784c282f6a"
+      Hint: __Updated by
+      Value: |
+        sitecore\Admin
+    - ID: "d9cf14b1-fa16-4ba6-9288-e8a174d4d522"
+      Hint: __Updated
+      Value: 20260919T000000Z

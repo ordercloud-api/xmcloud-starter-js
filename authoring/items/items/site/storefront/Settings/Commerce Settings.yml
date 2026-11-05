@@ -1,0 +1,35 @@
+﻿---
+ID: "d013dc29-ac82-44bf-bc7a-546f96490c7b"
+Parent: "9a44539d-57c5-433a-918b-9ffb63d6660c"
+Template: "5ca76f63-e5c4-460d-aae9-c28783e8ae5a"
+Path: /sitecore/content/commerce/storefront/Settings/Commerce Settings
+Languages:
+- Language: en
+  Versions:
+  - Version: 1
+    Fields:
+    - ID: "25bed78c-4957-4165-998a-ca1b52f67497"
+      Hint: __Created
+      Value: 20261001T233829Z
+    - ID: "5214446c-f818-4b39-89e9-c44e96051400"
+      Hint: Confirmation Page
+      Value: |
+        <link text="" anchor="" linktype="internal" class="" title="" target="_blank" querystring="" id="{6270F111-3AB9-4839-8F17-CF6C14F9C774}" />
+    - ID: "52807595-0f8f-4b20-8d2a-cb71d28c6103"
+      Hint: __Owner
+      Value: |
+        sitecore\rob.watt@sitecore.com
+    - ID: "5dd74568-4d4b-44c1-b513-0af5f4cda34f"
+      Hint: __Created by
+      Value: |
+        sitecore\rob.watt@sitecore.com
+    - ID: "8cdc337e-a112-42fb-bbb4-4143751e123f"
+      Hint: __Revision
+      Value: "f2c75bcf-8365-4bed-948d-bffb8d62da5e"
+    - ID: "badd9cf9-53e0-4d0c-bcc0-2d784c282f6a"
+      Hint: __Updated by
+      Value: |
+        sitecore\rob.watt@sitecore.com
+    - ID: "d9cf14b1-fa16-4ba6-9288-e8a174d4d522"
+      Hint: __Updated
+      Value: 20261005T140357Z

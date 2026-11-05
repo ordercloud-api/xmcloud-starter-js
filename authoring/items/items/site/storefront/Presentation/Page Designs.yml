@@ -1,0 +1,42 @@
+﻿---
+ID: "980e0edb-e3d9-4b01-9cb3-df49fbf18698"
+Parent: "78b320ac-6cbf-4ac0-91c1-86e0b213287e"
+Template: "0fe7a441-b2f5-47ba-94ca-959adb297272"
+Path: /sitecore/content/commerce/storefront/Presentation/Page Designs
+BranchID: "45cf9f42-b3ac-4412-aab9-f8441c7e448e"
+SharedFields:
+- ID: "ba1f60d6-3deb-40cc-bb61-eec772279ee1"
+  Hint: TemplatesMapping
+  Value: "%7bD427A2DF-3154-46E9-B9EE-12379242F3BA%7d%3d%257B4B0EFCD9-318D-429A-8DD7-629D2D2EF429%257D%26%7b96808D9C-0900-4CF5-B6A3-1EAFAB8BBFD0%7d%3d%257BD8D0AEB5-B8B6-4C23-B305-8B1CF4AB8174%257D"
+- ID: "dbbbeca1-21c7-4906-9dd2-493c1efa59a2"
+  Hint: __Shared revision
+  Value: "98b1f600-a7a9-4836-a5a4-f12a2e89ee59"
+- ID: "f6d8a61c-2f84-4401-bd24-52d2068172bc"
+  Hint: __Originator
+  Value: "{2EA756FA-AED6-4599-83B7-36FEFE229B31}"
+Languages:
+- Language: en
+  Versions:
+  - Version: 1
+    Fields:
+    - ID: "25bed78c-4957-4165-998a-ca1b52f67497"
+      Hint: __Created
+      Value: 20260910T195844Z
+    - ID: "52807595-0f8f-4b20-8d2a-cb71d28c6103"
+      Hint: __Owner
+      Value: |
+        sitecore\rob.watt@sitecore.com
+    - ID: "5dd74568-4d4b-44c1-b513-0af5f4cda34f"
+      Hint: __Created by
+      Value: |
+        sitecore\rob.watt@sitecore.com
+    - ID: "8cdc337e-a112-42fb-bbb4-4143751e123f"
+      Hint: __Revision
+      Value: "3cd93e28-1ecc-44f2-b122-2a65e04812cb"
+    - ID: "badd9cf9-53e0-4d0c-bcc0-2d784c282f6a"
+      Hint: __Updated by
+      Value: |
+        sitecore\rob.watt@sitecore.com
+    - ID: "d9cf14b1-fa16-4ba6-9288-e8a174d4d522"
+      Hint: __Updated
+      Value: 20261005T152134Z

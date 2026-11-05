@@ -1,0 +1,27 @@
+﻿---
+ID: "63149b14-8820-4849-b8be-d744f6a34354"
+Parent: "e8a9507e-62df-486b-83a2-5c2bd3c26e13"
+Template: "e8a9507e-62df-486b-83a2-5c2bd3c26e13"
+Path: /sitecore/templates/Project/commerce/Rendering Parameters/ProductImageGallery Parameters/__Standard Values
+Languages:
+- Language: en
+  Versions:
+  - Version: 1
+    Fields:
+    - ID: "25bed78c-4957-4165-998a-ca1b52f67497"
+      Hint: __Created
+      Value: 20260919T000000Z
+    - ID: "5dd74568-4d4b-44c1-b513-0af5f4cda34f"
+      Hint: __Created by
+      Value: |
+        sitecore\Admin
+    - ID: "8cdc337e-a112-42fb-bbb4-4143751e123f"
+      Hint: __Revision
+      Value: "ca130726-0d44-49a1-87fc-6949f9e1c8a6"
+    - ID: "badd9cf9-53e0-4d0c-bcc0-2d784c282f6a"
+      Hint: __Updated by
+      Value: |
+        sitecore\Admin
+    - ID: "d9cf14b1-fa16-4ba6-9288-e8a174d4d522"
+      Hint: __Updated
+      Value: 20260919T000000Z

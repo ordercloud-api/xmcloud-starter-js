@@ -1,0 +1,51 @@
+﻿---
+ID: "bf43b7a5-f513-406a-ad13-4b02fe4cf671"
+Parent: "e2c7f4ab-615a-4ad1-8a15-9764989dca22"
+Template: "76da0a8d-fc7e-42b2-af1e-205b49e43f98"
+Path: /sitecore/content/commerce/storefront/Presentation/Available Renderings/Commerce
+SharedFields:
+- ID: "715ae6c0-71c8-4744-ab4f-65362d20ad65"
+  Hint: Renderings
+  Value: |
+    {833F9D39-4087-458B-B9BD-5384F5E2AF54}
+    {2F4ECD0F-8862-4A1C-AFCF-69567BDBD350}
+    {12707F26-51FB-4581-A001-D4362C689C88}
+    {1CA0430C-A781-44B9-82EF-520090EC41F1}
+    {207AF61C-E26C-4866-B2FE-459E9D9696F1}
+    {059B1578-CEFE-4A3C-9C5C-9DB4EEF80D43}
+    {ACB3E788-6972-48D6-AF71-EB6BB8A552D3}
+    {11518FDB-D676-4465-ABAD-B23962002D16}
+    {1AACCDE8-59C3-4A25-83B4-E3BB74EE926D}
+    {62181536-DEB8-44CA-9FBE-DEDE1B11104C}
+- ID: "dbbbeca1-21c7-4906-9dd2-493c1efa59a2"
+  Hint: __Shared revision
+  Value: "fd8be31c-ae47-4c4f-b6db-a41a9b88cf13"
+Languages:
+- Language: en
+  Versions:
+  - Version: 1
+    Fields:
+    - ID: "001dd393-96c5-490b-924a-b0f25cd9efd8"
+      Hint: __Lock
+      Value: <r />
+    - ID: "25bed78c-4957-4165-998a-ca1b52f67497"
+      Hint: __Created
+      Value: 20260911T215926Z
+    - ID: "52807595-0f8f-4b20-8d2a-cb71d28c6103"
+      Hint: __Owner
+      Value: |
+        sitecore\crhistian.ramirez@sitecore.com
+    - ID: "5dd74568-4d4b-44c1-b513-0af5f4cda34f"
+      Hint: __Created by
+      Value: |
+        sitecore\crhistian.ramirez@sitecore.com
+    - ID: "8cdc337e-a112-42fb-bbb4-4143751e123f"
+      Hint: __Revision
+      Value: "d1258cef-2fae-4a40-ad33-7b10563fc21c"
+    - ID: "badd9cf9-53e0-4d0c-bcc0-2d784c282f6a"
+      Hint: __Updated by
+      Value: |
+        sitecore\eric.sitarz@sitecore.com
+    - ID: "d9cf14b1-fa16-4ba6-9288-e8a174d4d522"
+      Hint: __Updated
+      Value: 20261005T184103Z

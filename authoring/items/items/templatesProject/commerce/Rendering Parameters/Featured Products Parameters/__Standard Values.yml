@@ -1,0 +1,30 @@
+﻿---
+ID: "17f59755-7019-439d-a3ed-ef30d70e4449"
+Parent: "7e828ae2-55cf-4f25-8ec5-cc4f82cc3357"
+Template: "7e828ae2-55cf-4f25-8ec5-cc4f82cc3357"
+Path: /sitecore/templates/Project/commerce/Rendering Parameters/Featured Products Parameters/__Standard Values
+Languages:
+- Language: en
+  Versions:
+  - Version: 1
+    Fields:
+    - ID: "25bed78c-4957-4165-998a-ca1b52f67497"
+      Hint: __Created
+      Value: 20211012T120926Z
+    - ID: "4a66cd22-874a-4a8e-922d-fa42add59ab1"
+      Hint: Maximum Products Per Row
+      Value: 4
+    - ID: "5dd74568-4d4b-44c1-b513-0af5f4cda34f"
+      Hint: __Created by
+      Value: |
+        sitecore\JssImport
+    - ID: "8cdc337e-a112-42fb-bbb4-4143751e123f"
+      Hint: __Revision
+      Value: "d9e5831c-98d4-4829-a8ab-81b176f60aa9"
+    - ID: "badd9cf9-53e0-4d0c-bcc0-2d784c282f6a"
+      Hint: __Updated by
+      Value: |
+        sitecore\crhistian.ramirez@sitecore.com
+    - ID: "d9cf14b1-fa16-4ba6-9288-e8a174d4d522"
+      Hint: __Updated
+      Value: 20260919T033053Z
