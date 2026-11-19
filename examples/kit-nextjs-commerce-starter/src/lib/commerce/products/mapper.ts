@@ -40,3 +40,7 @@ export const toCommerceProduct = (
     currency: price.currency,
   };
 };
+
+export const selectCommerceProduct = (
+  value: OrderCloudBuyerProduct,
+): CommerceProduct | null => toCommerceProduct(value) ?? null;

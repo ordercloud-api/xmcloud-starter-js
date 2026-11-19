@@ -1,14 +1,15 @@
-'use client';
+"use client";
 
-import { Suspense, useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { readStoredOrderCloudToken } from '@/lib/commerce/auth/token-store';
+import { Suspense, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useCommerce } from "@sitecore-content-sdk/nextjs/commerce";
+import StandaloneCommerceProvider from "@/contexts/StandaloneCommerceProvider";
 import {
   CHECKOUT_ORDER_ID_STORAGE_KEY,
   isTerminalCheckoutStatus,
   type GatewayCheckoutStatus,
-} from '@/lib/commerce/checkout/status';
+} from "@/lib/commerce/checkout/status";
 
 type CheckoutStatusPayload = {
   orderId: string;
@@ -27,7 +28,8 @@ const pollDelayMs = (attempt: number): number => {
 
 function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
-  const stripeSessionId = searchParams.get('session_id')?.trim() || '';
+  const { ensureSession } = useCommerce();
+  const stripeSessionId = searchParams.get("session_id")?.trim() || "";
   const [status, setStatus] = useState<CheckoutStatusPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const attemptRef = useRef(0);
@@ -38,27 +40,34 @@ function CheckoutSuccessContent() {
 
     const poll = async () => {
       try {
-        const token = readStoredOrderCloudToken()?.accessToken;
+        const { accessToken } = await ensureSession();
         const orderId =
-          typeof window !== 'undefined'
+          typeof window !== "undefined"
             ? sessionStorage.getItem(CHECKOUT_ORDER_ID_STORAGE_KEY)
             : null;
 
-        if (!token) throw new Error('Shopper session expired. Return to the cart and try again.');
-        if (!orderId) throw new Error('Missing checkout order id. Start checkout from the cart again.');
+        if (!accessToken)
+          throw new Error(
+            "Shopper session expired. Return to the cart and try again.",
+          );
+        if (!orderId)
+          throw new Error(
+            "Missing checkout order id. Start checkout from the cart again.",
+          );
 
         const params = new URLSearchParams({
           orderId,
           t: String(Date.now()),
         });
-        if (stripeSessionId) params.set('sessionId', stripeSessionId);
+        if (stripeSessionId) params.set("sessionId", stripeSessionId);
 
         const response = await fetch(`/stripe/status?${params.toString()}`, {
-          cache: 'no-store',
-          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
         const payload = (await response.json()) as CheckoutStatusPayload;
-        if (!response.ok) throw new Error(payload.error || 'Unable to load order status');
+        if (!response.ok)
+          throw new Error(payload.error || "Unable to load order status");
         if (!active) return;
 
         setStatus(payload);
@@ -74,7 +83,9 @@ function CheckoutSuccessContent() {
         }
       } catch (err: unknown) {
         if (!active) return;
-        setError(err instanceof Error ? err.message : 'Unable to load order status');
+        setError(
+          err instanceof Error ? err.message : "Unable to load order status",
+        );
         attemptRef.current += 1;
         timeoutId = setTimeout(poll, pollDelayMs(attemptRef.current));
       }
@@ -86,9 +97,9 @@ function CheckoutSuccessContent() {
       active = false;
       clearTimeout(timeoutId);
     };
-  }, [stripeSessionId]);
+  }, [ensureSession, stripeSessionId]);
 
-  const checkoutStatus = status?.checkoutStatus ?? 'Pending';
+  const checkoutStatus = status?.checkoutStatus ?? "Pending";
 
   return (
     <main className="mx-auto flex min-h-[60vh] max-w-xl flex-col justify-center gap-4 px-6 py-16">
@@ -96,9 +107,9 @@ function CheckoutSuccessContent() {
         OrderCloud Checkout Gateway
       </p>
       <h1 className="text-3xl font-semibold">
-        {checkoutStatus === 'Completed' && 'Payment received'}
-        {checkoutStatus === 'Failed' && 'Payment failed'}
-        {checkoutStatus === 'Pending' && 'Confirming your payment…'}
+        {checkoutStatus === "Completed" && "Payment received"}
+        {checkoutStatus === "Failed" && "Payment failed"}
+        {checkoutStatus === "Pending" && "Confirming your payment…"}
       </h1>
       <p className="text-muted-foreground text-sm">
         Confirming payment with Stripe and submitting the OrderCloud order.
@@ -125,8 +136,12 @@ function CheckoutSuccessContent() {
 
 export default function CheckoutSuccessPage() {
   return (
-    <Suspense fallback={<main className="px-6 py-16">Loading confirmation…</main>}>
-      <CheckoutSuccessContent />
-    </Suspense>
+    <StandaloneCommerceProvider>
+      <Suspense
+        fallback={<main className="px-6 py-16">Loading confirmation…</main>}
+      >
+        <CheckoutSuccessContent />
+      </Suspense>
+    </StandaloneCommerceProvider>
   );
 }

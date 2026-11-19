@@ -17,16 +17,16 @@ Commerce-specific reusable patterns and best practices established by the existi
 `ProductContainer` is the composition root for a single product's UI:
 
 - Resolves **which** product to show (see §2, Product Source Resolution) from its own Sitecore datasource fields (`Product Source`, `Product ID`, `Preview Product ID`).
-- Wraps children in `ProductDataProvider` (`src/contexts/ProductDataContext.tsx`), which owns all async state: product load, spec load, spec selections, validation errors.
+- Wraps children in Content SDK `ProductProvider`, which owns product/spec loading, shared state, selection, validation, aborts and shopper-identity reloads.
 - Renders a **dynamic placeholder** (`AppPlaceholder` from `@sitecore-content-sdk/nextjs`, named `product-container-{DynamicPlaceholderId}`) so authors can drop any combination of child renderings inside it.
-- Children (`ProductInfo`, `AddToCart`, and presumably future components like a spec form or gallery) never receive product data as props — they call `useProductContext()` themselves.
+- Children never receive product data as props. They use the SDK's split `useProduct()`, `useProductOptions()` and `useProductSelection()` hooks, avoiding selection-driven rerenders for components that only need product data.
 
-This is the core reusable pattern: **a container component owns data-fetching + shared state via React Context; leaf components are Sitecore renderings that consume that context and are agnostic of how the data was sourced.** New commerce components that need product data should plug into `ProductDataContext` rather than accepting product fields as component props.
+This is the core reusable pattern: **a container resolves the product ID; the SDK provider owns fetching and shared state; leaf components consume the narrow SDK hook they need.**
 
 Cross-cutting contexts:
 
-- `OrderCloudContext` — anonymous OrderCloud session/auth (token acquisition + retry, stored via `lib/commerce/auth/token-store`), exposes `products`, `cart`, etc. services.
-- `ProductDataContext` — single-product state (load status, spec list, spec selections, validation) scoped under one `ProductContainer`.
+- SDK `CommerceProvider` — shopper token/session lifecycle, through the Edge commerce proxy and the Next.js token route. `OrderCloudContext` is now a thin compatibility adapter exposing the starter cart mapper and list view-model service.
+- SDK `ProductProvider` — single-product state (load status, raw/mapped product, specs, variants, selection and issue codes) scoped under one `ProductContainer`.
 - `RoutePathContext` — exposes the current Sitecore route segments so `ProductContainer` can resolve a product ID from the URL (see §2).
 
 ## 2. Reusable Pattern: Product Source Resolution
@@ -47,7 +47,7 @@ Product-detail components use a source abstraction normalized through `normalize
 - Presentation is controlled by OrderCloud Spec/Spec-Option XP (`presentation.control`, `presentation.textControl`, `label`, `helpText`, `placeholder`, swatch `color`/`imageUrl`, `badge`, etc.) and can be overridden per-spec or per-option.
 - A rendering-parameter-level default (`DefaultOptionControl`) sets the component-wide default control (e.g. dropdown vs. buttons), exposed to authors as a Design-tab variant (`SpecForm.Buttons`) rather than a raw custom field, because SitecoreAI Pages doesn't expose arbitrary rendering-parameter fields in its standard Design panel.
 - Supported option controls: `dropdown`, `buttons`, `radio`, `swatches`, `images`, `cards`. Supported open-text controls: `text`, `textarea`, `number`, `date`.
-- Validation (`required`, `min`/`max`/`step`, `minLength`/`maxLength`, `minDate`/`maxDate`) is enforced centrally in `ProductContainer`'s shared state; `AddToCart` only reads the resulting `areSpecSelectionsValid` flag and stays disabled until it's true.
+- OrderCloud validation (required specs, valid options, variant availability) comes from the SDK. Starter-only XP constraints (`min`/`max`/`step`, `minLength`/`maxLength`, `minDate`/`maxDate`) are layered through `ProductProvider.validateSpec`. English messages stay in the starter and are mapped from issue codes.
 
 **Pattern to reuse:** for any new component exposing OrderCloud-sourced choices to authors, prefer XP-driven presentation overrides over new custom rendering parameters, and centralize validation in the container/context rather than in the leaf component.
 

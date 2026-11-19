@@ -3,22 +3,26 @@
 import { useEffect, useState, type FormEvent } from "react";
 import type React from "react";
 import Link from "next/link";
+import {
+  useProduct,
+  useProductOptions,
+  useProductSelection,
+} from "@sitecore-content-sdk/nextjs/commerce";
 import type { ComponentProps } from "@/lib/component-props";
 import { useOrderCloud } from "@/contexts/OrderCloudContext";
 import { hasOrderCloudStatus } from "@/lib/commerce/client";
-import { useProductContext } from "@/contexts/ProductDataContext";
 import { getCartDestinationFromRoute } from "@/lib/commerce/cart/destination";
-import {
-  toLineItemSpecs,
-  validateSpecSelections,
-} from "@/lib/commerce/products/specs";
+import type { CommerceProduct } from "@/lib/commerce/products/types";
 
 type SubmissionStatus = "idle" | "adding" | "added" | "error";
 
 export const Default: React.FC<ComponentProps> = ({ params, page }) => {
-  const productData = useProductContext();
+  const productData = useProduct<CommerceProduct | null>({ optional: true });
+  const optionsData = useProductOptions({ optional: true });
+  const selectionData = useProductSelection({ optional: true });
   const { cart, startFreshAnonymousSession } = useOrderCloud();
-  const isAuthoring = page.mode.isEditing || page.mode.isDesignLibrary;
+  const isAuthoring =
+    page.mode.isEditing || page.mode.isPreview || page.mode.isDesignLibrary;
   const cartHref = getCartDestinationFromRoute(
     page.layout?.sitecore?.route,
   ).href;
@@ -41,33 +45,31 @@ export const Default: React.FC<ComponentProps> = ({ params, page }) => {
   useEffect(() => {
     setSubmissionStatus("idle");
     setSubmissionMessage(null);
-  }, [productData?.selections]);
+  }, [selectionData?.selections]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!productData || !productId || productData.specsStatus !== "ready") {
+    if (
+      !selectionData ||
+      !productId ||
+      !cart ||
+      optionsData?.status !== "success" ||
+      isAuthoring
+    ) {
       return;
     }
 
-    const nextSpecErrors = validateSpecSelections(
-      productData.specs,
-      productData.selections,
-    );
     const normalizedQuantity = Number(quantity);
     const hasValidQuantity =
       Number.isInteger(normalizedQuantity) && normalizedQuantity >= 1;
-    productData.setValidationErrors(nextSpecErrors);
+    const validSelection = selectionData.validate();
     setQuantityError(
       hasValidQuantity ? null : "Enter a quantity of at least 1.",
     );
-    if (Object.keys(nextSpecErrors).length > 0) {
+    const draft = selectionData.getLineItemDraft();
+    if (!validSelection || !draft) {
       setSubmissionStatus("error");
       setSubmissionMessage("Select the required product options.");
-      return;
-    }
-    if (productData.hasVariantSpecs && !productData.selectedVariant) {
-      setSubmissionStatus("error");
-      setSubmissionMessage("This product option combination is unavailable.");
       return;
     }
     if (!hasValidQuantity) return;
@@ -77,17 +79,17 @@ export const Default: React.FC<ComponentProps> = ({ params, page }) => {
     try {
       try {
         await cart.addItem({
-          productId,
+          productId: draft.ProductID,
           quantity: normalizedQuantity,
-          specs: toLineItemSpecs(productData.specs, productData.selections),
+          specs: draft.Specs,
         });
       } catch (error) {
         if (!hasOrderCloudStatus(error, 409)) throw error;
         await startFreshAnonymousSession();
         await cart.addItem({
-          productId,
+          productId: draft.ProductID,
           quantity: normalizedQuantity,
-          specs: toLineItemSpecs(productData.specs, productData.selections),
+          specs: draft.Specs,
         });
       }
       setSubmissionStatus("added");
@@ -102,7 +104,7 @@ export const Default: React.FC<ComponentProps> = ({ params, page }) => {
     }
   };
 
-  if (!productData) {
+  if (!productData || !optionsData || !selectionData) {
     return isAuthoring ? (
       <div className="rounded border border-dashed border-amber-500 p-3 text-sm text-amber-700">
         AddToCart must be placed inside a ProductContainer.
@@ -110,10 +112,7 @@ export const Default: React.FC<ComponentProps> = ({ params, page }) => {
     ) : null;
   }
 
-  if (
-    productData.status === "loading-session" ||
-    productData.status === "loading-product"
-  ) {
+  if (productData.isLoading) {
     return (
       <div
         className={`space-y-4 ${params.styles ?? ""}`}
@@ -127,10 +126,10 @@ export const Default: React.FC<ComponentProps> = ({ params, page }) => {
     );
   }
 
-  if (productData.status !== "ready" || !productData.product) {
+  if (!productData.isSuccess || !productData.product) {
     if (!isAuthoring) return null;
     const message =
-      productData.status === "configuration-error"
+      productData.status === "idle"
         ? "Configure Product Source and its corresponding product ID on ProductContainer."
         : productData.status === "not-found"
           ? `Product ${productData.productId ?? ""} was not found.`
@@ -175,7 +174,9 @@ export const Default: React.FC<ComponentProps> = ({ params, page }) => {
         <button
           type="submit"
           disabled={
-            !productData.areSpecSelectionsValid || submissionStatus === "adding"
+            !selectionData.isComplete ||
+            isAuthoring ||
+            submissionStatus === "adding"
           }
           className="min-h-12 flex-1 rounded-md bg-slate-950 px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
         >

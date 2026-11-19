@@ -1,9 +1,11 @@
 import type {
-  LineItemSpec,
   PriceMarkupType,
   Spec,
   SpecOption,
-} from "ordercloud-javascript-sdk";
+  SpecSelection,
+  SpecSelectionIssue,
+  SpecSelections,
+} from "@sitecore-content-sdk/commerce";
 import { asFiniteNumber, asNonEmptyString, asRecord } from "../normalization";
 
 export const productSpecOptionControls = [
@@ -75,11 +77,8 @@ export type CommerceProductSpec = {
   validation: ProductSpecValidation;
 };
 
-export type ProductSpecSelection = {
-  optionId?: string;
-  value?: string;
-};
-export type ProductSpecSelections = Record<string, ProductSpecSelection>;
+export type ProductSpecSelection = SpecSelection;
+export type ProductSpecSelections = SpecSelections;
 
 const oneOf = <T extends string>(
   value: unknown,
@@ -205,20 +204,6 @@ export const toCommerceProductSpec = (
   };
 };
 
-export const getInitialSpecSelections = (
-  specs: CommerceProductSpec[],
-): ProductSpecSelections =>
-  Object.fromEntries(
-    specs.map((spec) => {
-      const defaultOptionId = spec.options.some(
-        (option) => option.id === spec.defaultOptionId,
-      )
-        ? spec.defaultOptionId
-        : undefined;
-      return [spec.id, { optionId: defaultOptionId, value: spec.defaultValue }];
-    }),
-  );
-
 export const resolveDateConstraint = (value?: string): string | undefined => {
   if (value !== "today") return value;
   const now = new Date();
@@ -226,26 +211,43 @@ export const resolveDateConstraint = (value?: string): string | undefined => {
   return new Date(now.getTime() - offset).toISOString().slice(0, 10);
 };
 
-const getValueValidationError = (
+type ProductSpecIssueCode =
+  | "min-length"
+  | "max-length"
+  | "invalid-number"
+  | "min-value"
+  | "max-value"
+  | "min-date"
+  | "max-date"
+  | "step";
+
+const getValueValidationIssue = (
   spec: CommerceProductSpec,
   value: string,
-): string | undefined => {
-  const label = spec.presentation.label ?? spec.name;
+): SpecSelectionIssue<ProductSpecIssueCode> | undefined => {
   const { validation } = spec;
   const textControl = spec.presentation.textControl ?? "text";
+  const issue = (
+    code: ProductSpecIssueCode,
+    params?: Record<string, string | number>,
+  ): SpecSelectionIssue<ProductSpecIssueCode> => ({
+    specId: spec.id,
+    code,
+    params,
+  });
 
   if (validation.minLength !== undefined && value.length < validation.minLength)
-    return `${label} must be at least ${validation.minLength} characters.`;
+    return issue("min-length", { min: validation.minLength });
   if (validation.maxLength !== undefined && value.length > validation.maxLength)
-    return `${label} must be at most ${validation.maxLength} characters.`;
+    return issue("max-length", { max: validation.maxLength });
 
   if (textControl === "number") {
     const number = Number(value);
-    if (!Number.isFinite(number)) return `Enter a valid ${label}.`;
+    if (!Number.isFinite(number)) return issue("invalid-number");
     if (validation.min !== undefined && number < validation.min)
-      return `${label} must be at least ${validation.min}.`;
+      return issue("min-value", { min: validation.min });
     if (validation.max !== undefined && number > validation.max)
-      return `${label} must be at most ${validation.max}.`;
+      return issue("max-value", { max: validation.max });
     if (validation.step !== undefined && validation.step > 0) {
       const stepBase = validation.min ?? 0;
       const remainder = Math.abs((number - stepBase) % validation.step);
@@ -253,66 +255,91 @@ const getValueValidationError = (
         remainder > Number.EPSILON * 10 &&
         Math.abs(remainder - validation.step) > Number.EPSILON * 10
       )
-        return `${label} must use increments of ${validation.step}.`;
+        return issue("step", { step: validation.step });
     }
   }
 
   if (textControl === "date") {
     const minDate = resolveDateConstraint(validation.minDate);
     const maxDate = resolveDateConstraint(validation.maxDate);
-    if (minDate && value < minDate)
-      return `${label} must be on or after ${minDate}.`;
-    if (maxDate && value > maxDate)
-      return `${label} must be on or before ${maxDate}.`;
+    if (minDate && value < minDate) return issue("min-date", { date: minDate });
+    if (maxDate && value > maxDate) return issue("max-date", { date: maxDate });
   }
 
   return undefined;
 };
 
-export const validateSpecSelections = (
-  specs: CommerceProductSpec[],
-  selections: ProductSpecSelections,
-): Record<string, string> => {
-  const errors: Record<string, string> = {};
+export const validateProductSpec = (
+  rawSpec: Spec,
+  selection: SpecSelection,
+): SpecSelectionIssue<string> | undefined => {
+  const spec = toCommerceProductSpec(rawSpec);
+  if (!spec) return undefined;
 
-  for (const spec of specs) {
-    const selection = selections[spec.id] ?? {};
-    const selectedOption = spec.options.find(
-      (option) => option.id === selection.optionId,
-    );
-    const requiresValue =
-      (spec.options.length === 0 && spec.allowOpenText) ||
-      selectedOption?.isOpenText === true;
-    const label = spec.presentation.label ?? spec.name;
-    const value = selection.value?.trim();
-
-    if (spec.required && spec.options.length === 0 && !spec.allowOpenText) {
-      errors[spec.id] = `${label} is unavailable.`;
-    } else if (spec.required && spec.options.length > 0 && !selectedOption) {
-      errors[spec.id] = `Select ${label}.`;
-    } else if (
-      (spec.required && requiresValue && !value) ||
-      (selectedOption?.isOpenText && !value)
-    ) {
-      errors[spec.id] = `Enter ${label}.`;
-    } else if (requiresValue && value) {
-      const validationError = getValueValidationError(spec, value);
-      if (validationError) errors[spec.id] = validationError;
-    }
-  }
-
-  return errors;
+  const selectedOption = spec.options.find(
+    (option) => option.id === selection.optionId,
+  );
+  const acceptsValue =
+    (spec.options.length === 0 && spec.allowOpenText) ||
+    selectedOption?.isOpenText === true;
+  const value = selection.value?.trim();
+  return acceptsValue && value
+    ? getValueValidationIssue(spec, value)
+    : undefined;
 };
 
-export const toLineItemSpecs = (
-  specs: CommerceProductSpec[],
-  selections: ProductSpecSelections,
-): LineItemSpec[] =>
-  specs.flatMap((spec) => {
-    const selection = selections[spec.id] ?? {};
-    const optionId = asNonEmptyString(selection.optionId, { trim: true });
-    const value = asNonEmptyString(selection.value, { trim: true });
-    if (!optionId && !value) return [];
+const formatIssue = (
+  spec: CommerceProductSpec | undefined,
+  issue: SpecSelectionIssue<string>,
+): string => {
+  const label = spec?.presentation.label ?? spec?.name ?? "Product option";
+  const value = issue.params ?? {};
+  switch (issue.code) {
+    case "required":
+    case "invalid-option":
+      return `Select ${label}.`;
+    case "value-required":
+      return `Enter ${label}.`;
+    case "open-text-not-allowed":
+      return `${label} does not accept custom text.`;
+    case "spec-unavailable":
+      return `${label} is unavailable.`;
+    case "variant-unavailable":
+      return "This product option combination is unavailable.";
+    case "min-length":
+      return `${label} must be at least ${value.min} characters.`;
+    case "max-length":
+      return `${label} must be at most ${value.max} characters.`;
+    case "invalid-number":
+      return `Enter a valid ${label}.`;
+    case "min-value":
+      return `${label} must be at least ${value.min}.`;
+    case "max-value":
+      return `${label} must be at most ${value.max}.`;
+    case "min-date":
+      return `${label} must be on or after ${value.date}.`;
+    case "max-date":
+      return `${label} must be on or before ${value.date}.`;
+    case "step":
+      return `${label} must use increments of ${value.step}.`;
+    default:
+      return `Check ${label}.`;
+  }
+};
 
-    return [{ SpecID: spec.id, OptionID: optionId, Value: value }];
-  });
+export const toProductSpecErrors = (
+  specs: CommerceProductSpec[],
+  issues: SpecSelectionIssue<string>[],
+): { fields: Record<string, string>; message?: string } => {
+  const fields: Record<string, string> = {};
+  let message: string | undefined;
+  for (const issue of issues) {
+    const text = formatIssue(
+      specs.find((spec) => spec.id === issue.specId),
+      issue,
+    );
+    if (issue.specId) fields[issue.specId] = text;
+    else message = text;
+  }
+  return message ? { fields, message } : { fields };
+};

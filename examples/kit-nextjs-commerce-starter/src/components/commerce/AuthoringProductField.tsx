@@ -113,7 +113,11 @@ export default function AuthoringProductField({
   }, [open]);
 
   useEffect(() => {
-    if (status !== "authenticated" || selectedIds.length === 0) {
+    if (
+      status !== "authenticated" ||
+      !productsService ||
+      selectedIds.length === 0
+    ) {
       setSelectedProducts([]);
       return;
     }
@@ -131,7 +135,7 @@ export default function AuthoringProductField({
   }, [productsService, selectedIds, status]);
 
   useEffect(() => {
-    if (!open || status !== "authenticated") return;
+    if (!open || status !== "authenticated" || !productsService) return;
 
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => {

@@ -23,12 +23,12 @@ Renders one form control (or two, for an "open text" option) per OrderCloud Spec
 | Prop | Type | Purpose |
 |---|---|---|
 | `specs` | `CommerceProductSpec[]` | Normalized specs for the current product (see [types](#spec-data-model)). |
-| `selections` | `ProductSpecSelections` (`Record<specId, { optionId?, value? }>`) | Current selection state, owned by `ProductDataContext`. |
+| `selections` | `SpecSelections` (`Record<specId, { optionId?, value? }>`) | Current selection state from SDK `useProductSelection()`. |
 | `errors` | `Record<specId, string>` | Validation error messages, keyed by spec ID. |
 | `defaultOptionControl` | `"dropdown" \| "buttons"` | Component-wide default from [`SpecForm`](../spec-form.md); overridden per-spec by `spec.presentation.control` when present. |
 | `currency` | `string?` | Passed through to price-markup formatting. |
 | `disabled` | `boolean` | Currently always `false` when called from `SpecForm` (see that spec's known gaps). |
-| `onChange` | `(specId, selection) => void` | Forwards to `ProductDataContext.updateSelection`. |
+| `onChange` | `(specId, selection) => void` | Forwards to SDK `selection.setSelection`. |
 
 ## Spec data model (`lib/commerce/products/specs.ts`)
 
@@ -75,4 +75,4 @@ Renders based on `spec.presentation.textControl` (default `"text"`): `<textarea>
 
 - `disabled` is threaded through every control but, as noted in [../spec-form.md](../spec-form.md), is never actually set to `true` by the current caller — dead prop in practice today.
 - `formatMarkup`'s currency formatting duplicates logic similar to `formatPrice` in [ProductInfo](../product-info.md) and [OrderCloudProductCard](order-cloud-product-card.md) — a shared money-formatting utility would consolidate all three (see that component's known gaps for the same observation).
-- No client-side re-validation as the user types in an open-text control beyond native HTML constraint attributes (`minLength`/`maxLength`/`min`/`max`) — actual validation errors are computed centrally in `ProductDataContext`/`AddToCart`, not here.
+- XP validation is layered into SDK `ProductProvider` through `validateProductSpec`; this helper only renders the resulting localized messages.

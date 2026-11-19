@@ -1,4 +1,4 @@
-import type { LineItemSpec } from 'ordercloud-javascript-sdk';
+import type { LineItemSpec } from "@sitecore-content-sdk/commerce";
 
 export interface CommerceCartItemSpec {
   specId: string;
@@ -20,7 +20,7 @@ export interface CommerceCartItem {
 
 export interface CommerceCart {
   id?: string;
-  status: 'Unsubmitted';
+  status: "Unsubmitted";
   currency?: string;
   subtotal?: number;
   taxCost?: number;

@@ -37,7 +37,7 @@ Standard Values default: `Product Source` = `OrderCloud Picker`. **This confirms
 
 The current comparison phase intentionally keeps the Plugin field type and Marketplace app available while also rendering an in-component picker in Pages. Both methods write the same ID-only value. If the Marketplace app is retired later, change the two product fields to Single-Line Text without changing their names or stored values.
 
-**`AddToCart` / `ProductInfo` / `SpecForm` renderings** — none have a Datasource Template, confirming they're pure leaf renderings with no Sitecore-authored fields of their own (everything comes from `ProductDataContext`). Their Parameters Templates have no custom fields **except** `SpecForm Parameters`, which has one:
+**`AddToCart` / `ProductInfo` / `SpecForm` renderings** — none have a Datasource Template, confirming they're pure leaf renderings with no Sitecore-authored fields of their own (product/options/selection come from Content SDK `ProductProvider`). Their Parameters Templates have no custom fields **except** `SpecForm Parameters`, which has one:
 
 | Field                  | Type     | Source              |
 | ---------------------- | -------- | ------------------- |

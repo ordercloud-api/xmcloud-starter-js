@@ -12,7 +12,7 @@ source: https://github.com/ordercloud-api/xmcloud-starter-js/tree/feature/commer
 
 ## Summary
 
-Composition root for a single product's UI. `ProductContainer` doesn't render any product data itself — it resolves **which** product to show, provides that resolution (and all related async state) to descendants via `ProductDataContext`, and renders a dynamic placeholder so authors can drop any combination of leaf components (`ProductInfo`, `AddToCart`, `SpecForm`, …) inside it.
+Composition root for a single product's UI. `ProductContainer` doesn't render any product data itself — it resolves **which** product to show, passes the resolved ID and starter mapper to Content SDK `ProductProvider`, and renders a dynamic placeholder so authors can drop any combination of leaf components (`ProductInfo`, `AddToCart`, `SpecForm`, …) inside it.
 
 - **Location:** `src/components/product-container/ProductContainer.tsx` (+ `product-container.props.ts`)
 - **Rendering type:** server component; wraps a dynamic placeholder
@@ -56,9 +56,9 @@ Rendering params consumed: `params.styles`, `params.RenderingIdentifier`, `param
 1. Reads `Product Source` → normalized via `normalizeProductSource()` (`lib/commerce/products/reference.ts`) to `"last-url-segment" | "ordercloud-picker" | undefined`. Matching is substring/case-insensitive (`includes("picker")`, `includes("url")`), so `"OrderCloud Picker"`, `"picker"`, etc. all resolve to `"ordercloud-picker"`.
 2. Reads `Product ID` and `Preview Product ID` as plain OrderCloud IDs. Structured/JSON references are intentionally unsupported.
 3. In authoring mode, shows an in-component selector for `Product ID` in picker mode or `Preview Product ID` in URL mode. Saving writes the ID through the Sitecore Authoring and Management API and refreshes product context immediately.
-4. Renders a `<section>` wrapper (`data-component="ProductContainer"`, `data-class-change`) with `params.styles` / `params.RenderingIdentifier`, wrapping everything in `ProductDataProvider` (`source`, `selectedProduct`, `previewProduct`, `isAuthoring`).
+4. `ProductContainerContent` resolves the starter-specific product reference and renders Content SDK `ProductProvider` with the resolved `productId`, `selectCommerceProduct` mapper and starter `validateProductSpec` callback.
 5. Inside the provider, renders `AppPlaceholder` (`@sitecore-content-sdk/nextjs`) named `product-container-{params.DynamicPlaceholderId ?? "0"}`, passing through `rendering`, `page`, and the component map — this is what makes the placeholder "dynamic" (authors can add multiple `ProductContainer` instances on one page, each with its own placeholder key and independent product context).
-6. `isAuthoring = page.mode.isEditing || page.mode.isDesignLibrary` is passed to the provider so it knows whether to fall back to `Preview Product ID` when there's no concrete product in the URL (see below).
+6. `isAuthoring = page.mode.isEditing || page.mode.isPreview || page.mode.isDesignLibrary` controls preview-ID fallback and in-context picker UI.
 
 ## Product ID resolution (delegated to `ProductDataProvider` → `resolveProductId()`)
 
@@ -68,13 +68,13 @@ Rendering params consumed: `params.styles`, `params.RenderingIdentifier`, `param
   - on the live site, resolves to `undefined` (→ `configuration-error` downstream).
 - Any other/unrecognized source → `undefined`.
 
-## Context provided to children
+## State provided to children
 
-`ProductDataContext` (`src/contexts/ProductDataContext.tsx`) — see [product-info.md](product-info.md), [add-to-cart.md](add-to-cart.md), [spec-form.md](spec-form.md) for how leaf components consume it. Exposes: `productId`, `product`, `status` (`loading-session | loading-product | ready | not-found | configuration-error | error`), `error`, `retry`, `specs`, `specsStatus`, `specsError`, `retrySpecs`, `selections`, `areSpecSelectionsValid`, `validationErrors`, `updateSelection`, `setValidationErrors`.
+Children consume `useProduct()`, `useProductOptions()` and `useProductSelection()` from `@sitecore-content-sdk/nextjs/commerce`. Product statuses are SDK statuses (`idle | loading | success | not-found | error`); option statuses are `idle | loading | success | error`.
 
-Also relies on ambient `OrderCloudContext` (anonymous session) and `RoutePathContext` (current route segments), both expected to be provided higher up the tree (e.g. in the app's root layout / providers), not by `ProductContainer` itself.
+The container relies on ambient `OrderCloudContext`/SDK `CommerceProvider` for the shopper session and `RoutePathContext` for route segments.
 
 ## Known gaps
 
-- No visual/error state of its own — all loading/error UI is delegated to leaf components reading `ProductDataContext.status`. If a page places no leaf components inside a `ProductContainer`, there's no visible feedback that the container's product resolution failed.
+- No visual/error state of its own — all loading/error UI is delegated to leaf components reading the SDK product hooks.
 - `data-class-change` attribute on the wrapper `<section>` is present in the source but undocumented — no other component in this inventory uses it.

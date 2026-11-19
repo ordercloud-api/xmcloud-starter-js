@@ -1,18 +1,11 @@
-import { Me, type Spec, type Variant } from "ordercloud-javascript-sdk";
-import type { CommerceRequest } from "../client";
+import type { ProductsApi } from "@sitecore-content-sdk/commerce";
 import { toCommerceProduct } from "./mapper";
 import type {
   CommerceProduct,
   CommerceProductList,
   ListProductsOptions,
-  OrderCloudBuyerProduct,
   ProductRequestOptions,
 } from "./types";
-import { toCommerceProductSpec, type CommerceProductSpec } from "./specs";
-import {
-  toCommerceProductVariant,
-  type CommerceProductVariant,
-} from "./variants";
 
 const asPositiveInteger = (value: unknown): number | undefined =>
   typeof value === "number" && Number.isInteger(value) && value > 0
@@ -32,11 +25,6 @@ const getProperty = (value: unknown, ...names: string[]): unknown => {
     names.some((name) => candidate.toLowerCase() === name.toLowerCase()),
   );
   return key ? record[key] : undefined;
-};
-
-const getListItems = (value: unknown): unknown[] => {
-  const items = getProperty(value, "Items", "items");
-  return Array.isArray(items) ? items : [];
 };
 
 const getMeta = (value: unknown): CommerceProductList["meta"] => {
@@ -102,30 +90,27 @@ const getMeta = (value: unknown): CommerceProductList["meta"] => {
 };
 
 export class ProductsService {
-  constructor(private readonly request: CommerceRequest) {}
+  constructor(private readonly products: ProductsApi) {}
 
   async list(options: ListProductsOptions = {}): Promise<CommerceProductList> {
-    const response = await this.request((requestOptions) => {
-      const optionsWithSignal = { ...requestOptions, signal: options.signal };
-      return Me.ListProducts<OrderCloudBuyerProduct>(
-        {
-          catalogID: options.catalogId?.trim() || undefined,
-          categoryID: options.categoryId?.trim() || undefined,
-          search: options.search?.trim() || undefined,
-          sortBy: options.sortBy,
-          page: options.page,
-          pageSize: options.pageSize,
-          filters: options.filters,
-        },
-        optionsWithSignal,
-      );
-    });
+    const response = await this.products.list(
+      {
+        catalogID: options.catalogId?.trim() || undefined,
+        categoryID: options.categoryId?.trim() || undefined,
+        search: options.search?.trim() || undefined,
+        sortBy: options.sortBy,
+        page: options.page,
+        pageSize: options.pageSize,
+        filters: options.filters,
+      },
+      { signal: options.signal },
+    );
 
     return {
-      items: getListItems(response)
-        .map(toCommerceProduct)
-        .filter((product): product is CommerceProduct => !!product),
-      meta: getMeta(getProperty(response, "Meta", "meta")),
+      items: response.Items.map(toCommerceProduct).filter(
+        (product): product is CommerceProduct => !!product,
+      ),
+      meta: getMeta(response.Meta),
     };
   }
 
@@ -148,18 +133,25 @@ export class ProductsService {
       };
     }
 
-    const response = await this.request((requestOptions) => {
-      const optionsWithSignal = { ...requestOptions, signal: options.signal };
-      return Me.ListProducts<OrderCloudBuyerProduct>(
-        {
-          pageSize: uniqueIds.length,
-          filters: { ID: uniqueIds.join("|") },
-        },
-        optionsWithSignal,
-      );
-    });
+    const chunks: string[][] = [];
+    for (let index = 0; index < uniqueIds.length; index += 100) {
+      chunks.push(uniqueIds.slice(index, index + 100));
+    }
+
+    const responses = await Promise.all(
+      chunks.map((ids) =>
+        this.products.list(
+          {
+            pageSize: ids.length,
+            filters: { ID: ids },
+          },
+          { signal: options.signal },
+        ),
+      ),
+    );
     const productsById = new Map(
-      getListItems(response)
+      responses
+        .flatMap((response) => response.Items)
         .map(toCommerceProduct)
         .filter((product): product is CommerceProduct => !!product)
         .map((product): [string, CommerceProduct] => [product.id, product]),
@@ -173,90 +165,5 @@ export class ProductsService {
       items,
       meta: { totalCount: items.length },
     };
-  }
-
-  async get(
-    productId: string,
-    options: ProductRequestOptions = {},
-  ): Promise<CommerceProduct> {
-    const normalizedId = productId.trim();
-    if (!normalizedId) throw new Error("OrderCloud product ID is required");
-
-    const response = await this.request((requestOptions) => {
-      const optionsWithSignal = { ...requestOptions, signal: options.signal };
-      return Me.GetProduct<OrderCloudBuyerProduct>(
-        normalizedId,
-        undefined,
-        optionsWithSignal,
-      );
-    });
-    const product = toCommerceProduct(response);
-    if (!product)
-      throw new Error("OrderCloud returned an invalid product response");
-    return product;
-  }
-
-  async listSpecs(
-    productId: string,
-    options: ProductRequestOptions = {},
-  ): Promise<CommerceProductSpec[]> {
-    const normalizedId = productId.trim();
-    if (!normalizedId) throw new Error("OrderCloud product ID is required");
-
-    const response = await this.request((requestOptions) => {
-      const optionsWithSignal = { ...requestOptions, signal: options.signal };
-      return Me.ListSpecs<Spec>(
-        normalizedId,
-        { pageSize: 100 },
-        optionsWithSignal,
-      );
-    });
-
-    return Array.isArray(response.Items)
-      ? response.Items.flatMap((value) => {
-          const spec = toCommerceProductSpec(value);
-          return spec ? [spec] : [];
-        })
-      : [];
-  }
-
-  async listVariants(
-    productId: string,
-    options: ProductRequestOptions = {},
-  ): Promise<CommerceProductVariant[]> {
-    const normalizedId = productId.trim();
-    if (!normalizedId) throw new Error("OrderCloud product ID is required");
-
-    const variants: CommerceProductVariant[] = [];
-    const pageSize = 100;
-    let page = 1;
-
-    while (true) {
-      const response = await this.request((requestOptions) => {
-        const optionsWithSignal = { ...requestOptions, signal: options.signal };
-        return Me.ListVariants<Variant>(
-          normalizedId,
-          { page, pageSize, filters: { Active: true } },
-          optionsWithSignal,
-        );
-      });
-      const pageItems = Array.isArray(response.Items) ? response.Items : [];
-      variants.push(
-        ...pageItems.flatMap((value) => {
-          const variant = toCommerceProductVariant(value);
-          return variant?.active ? [variant] : [];
-        }),
-      );
-
-      const totalPages = asNonNegativeInteger(response.Meta?.TotalPages);
-      if (
-        pageItems.length < pageSize ||
-        (totalPages !== undefined && page >= totalPages)
-      )
-        break;
-      page += 1;
-    }
-
-    return variants;
   }
 }

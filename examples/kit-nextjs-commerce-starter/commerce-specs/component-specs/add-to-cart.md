@@ -8,7 +8,7 @@ source: https://github.com/ordercloud-api/xmcloud-starter-js/tree/feature/commer
 
 # `AddToCart`
 
-> Part of [../index.md](../index.md). Must be rendered inside a [ProductContainer](product-container.md) — reads product/spec state from `ProductDataContext` and cart operations from `OrderCloudContext`.
+> Part of [../index.md](../index.md). Must be rendered inside a [ProductContainer](product-container.md) — reads Content SDK product/selection state and the thin starter cart adapter.
 
 ## Summary
 
@@ -18,7 +18,7 @@ Client leaf component rendering a quantity input and "Add to cart" submit button
 - **Rendering type:** client (`"use client"`)
 - **Variants:** `Default` only
 - **Registered as:** `AddToCart` in `.sitecore/component-map.ts` (client map)
-- **Depends on:** `ProductDataContext` (`useProductContext()`), `OrderCloudContext` (`useOrderCloud()` → `cart.addItem`), `lib/commerce/products/specs.ts` (`toLineItemSpecs`, `validateSpecSelections`)
+- **Depends on:** SDK `useProduct()`, `useProductOptions()`, `useProductSelection()` and `OrderCloudContext.cart`, which routes writes through `OrderCloudService.request()`.
 
 ## Local state
 
@@ -29,12 +29,12 @@ Client leaf component rendering a quantity input and "Add to cart" submit button
 | `submissionStatus` (`"idle" \| "adding" \| "added" \| "error"`) | Drives button label/disabled state and the result message. |
 | `submissionMessage` (`string \| null`) | Success or error text shown after submit. |
 
-Two effects reset local state: when `productData.productId` changes (new product loaded — resets quantity/errors/submission), and when `productData?.selections` changes (any spec selection change clears the previous submission result).
+Two effects reset local state when the product ID or SDK selections change.
 
 ## Submit flow (`submit`)
 
-1. Guards: no-op if `!productData`, no `productId`, or `productData.specsStatus !== "ready"`.
-2. Revalidates specs via `validateSpecSelections(productData.specs, productData.selections)` and pushes the result into `productData.setValidationErrors(...)` — this is a **second** validation pass in addition to the `areSpecSelectionsValid` flag already gating the submit button (defense in depth against stale/disabled-state edge cases).
+1. Guards: no selection provider, product ID/cart, options not ready, or editing/preview mode.
+2. Calls SDK `selection.validate()` and `selection.getLineItemDraft()`.
 3. Validates quantity is a positive integer (`Number.isInteger(...) && >= 1`); sets `quantityError` if not.
 4. If there are spec errors → `submissionStatus = "error"`, message "Select the required product options.", return (without checking quantity further).
 5. If quantity invalid → return silently (the `quantityError` message is already shown near the input).
@@ -43,11 +43,12 @@ Two effects reset local state: when `productData.productId` changes (new product
    await cart.addItem({
      productId,
      quantity: normalizedQuantity,
-     specs: toLineItemSpecs(productData.specs, productData.selections),
+     specs: draft.Specs,
    });
    ```
-   `toLineItemSpecs()` (`lib/commerce/products/specs.ts`) converts the in-memory `ProductSpecSelections` map into the `LineItemSpec[]` shape OrderCloud's cart API expects.
-7. On success: `submissionStatus = "added"`, message "Added to cart". On failure: `submissionStatus = "error"`, message from `error.message` or a generic fallback.
+   The SDK owns default selection, variant resolution, issue generation and line-item-spec conversion.
+7. A 409 resets the SDK anonymous session once and retries; other errors surface. No cart deletion occurs during recovery.
+8. On success: `submissionStatus = "added"`, message "Added to cart".
 
 ## Rendering states
 
@@ -55,16 +56,16 @@ Same status-driven pattern as [ProductInfo](product-info.md):
 
 | `productData` / `status` | Rendering |
 |---|---|
-| `null` | Authoring: "AddToCart must be placed inside a ProductContainer." Live: nothing. |
-| `"loading-session"` / `"loading-product"` | Skeleton: `h-12 w-36 animate-pulse` block, `aria-live="polite"`, screen-reader "Loading add to cart…". |
-| `"configuration-error"` / `"not-found"` / `"error"` | Authoring-only message box (same three-way message logic as `ProductInfo`/`SpecForm`). Live: nothing. |
-| `"ready"` | Full `<form>` (below). |
+| Hook state `null` | Authoring: "AddToCart must be placed inside a ProductContainer." Live: nothing. |
+| Product `"loading"` | Skeleton. |
+| Product `"idle"` / `"not-found"` / `"error"` | Authoring-only message box. |
+| Product `"success"` | Full form. |
 
 ## Ready-state form
 
 - `<form onSubmit={submit} noValidate>` with `data-component="AddToCart"`, `params.styles`, `params.RenderingIdentifier`.
 - Quantity `<input type="number" min={1} step={1}>`; on change, clears `quantityError` and resets `submissionStatus`/`submissionMessage` back to idle so a fresh edit doesn't show stale success/error text. `aria-describedby="product-quantity-error"` when there's a quantity error; the error itself is `role="alert"`.
-- Submit button: `disabled={!productData.areSpecSelectionsValid || submissionStatus === "adding"}` — **this is the primary spec-validation gate**; the in-`submit` revalidation (step 2 above) is a secondary safety net. Label switches to "Adding…" while `submissionStatus === "adding"`.
+- Submit button is disabled while selection is incomplete, authoring/preview is active, or submission is in progress.
 - Result message: green/emerald text with `role="status"` on success, red text with `role="alert"` on error. On success only, the message also includes a `View cart` link (`next/link` to `/cart`, the static cart page — see [OrderCloudCart](helpers/order-cloud-cart.md)).
 
 ## Known gaps

@@ -1,13 +1,15 @@
-import type { CommerceRequest } from './client';
-import { ProductsService } from './products/service';
-import { CartService } from './cart/service';
+import type { OrderCloudService } from "@sitecore-content-sdk/commerce";
+import { ProductsService } from "./products/service";
+import { CartService } from "./cart/service";
 
 export interface OrderCloudServices {
   products: ProductsService;
   cart: CartService;
 }
 
-export const createOrderCloudServices = (request: CommerceRequest): OrderCloudServices => ({
-  products: new ProductsService(request),
-  cart: new CartService(request),
+export const createOrderCloudServices = (
+  service: OrderCloudService,
+): OrderCloudServices => ({
+  products: new ProductsService(service.products),
+  cart: new CartService((path, init) => service.request(path, init)),
 });

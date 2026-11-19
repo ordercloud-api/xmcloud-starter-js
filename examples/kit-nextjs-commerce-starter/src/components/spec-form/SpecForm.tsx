@@ -1,25 +1,50 @@
 "use client";
 
 import type React from "react";
+import { useMemo } from "react";
+import {
+  useProduct,
+  useProductOptions,
+  useProductSelection,
+} from "@sitecore-content-sdk/nextjs/commerce";
 import type { ComponentProps } from "@/lib/component-props";
-import { useProductContext } from "@/contexts/ProductDataContext";
 import {
   ProductSpecFields,
   resolveDefaultOptionControl,
 } from "@/components/commerce/ProductSpecFields";
+import type { CommerceProduct } from "@/lib/commerce/products/types";
+import {
+  toCommerceProductSpec,
+  toProductSpecErrors,
+} from "@/lib/commerce/products/specs";
 
 const SpecForm: React.FC<
   ComponentProps & { variantDefaultOptionControl?: "dropdown" | "buttons" }
 > = ({ params, page, variantDefaultOptionControl }) => {
-  const productData = useProductContext();
-  const isAuthoring = page.mode.isEditing || page.mode.isDesignLibrary;
+  const productData = useProduct<CommerceProduct | null>({ optional: true });
+  const optionsData = useProductOptions({ optional: true });
+  const selectionData = useProductSelection({ optional: true });
+  const isAuthoring =
+    page.mode.isEditing || page.mode.isPreview || page.mode.isDesignLibrary;
   const defaultOptionControl =
     variantDefaultOptionControl ??
     resolveDefaultOptionControl(
       params.DefaultOptionControl ?? params["Default Option Control"],
     );
+  const specs = useMemo(
+    () =>
+      optionsData?.specs.flatMap((spec) => {
+        const mapped = toCommerceProductSpec(spec);
+        return mapped ? [mapped] : [];
+      }) ?? [],
+    [optionsData?.specs],
+  );
+  const validationErrors = useMemo(
+    () => toProductSpecErrors(specs, selectionData?.visibleIssues ?? []),
+    [selectionData?.visibleIssues, specs],
+  );
 
-  if (!productData) {
+  if (!productData || !optionsData || !selectionData) {
     return isAuthoring ? (
       <div className="rounded border border-dashed border-amber-500 p-3 text-sm text-amber-700">
         SpecForm must be placed inside a ProductContainer.
@@ -27,10 +52,7 @@ const SpecForm: React.FC<
     ) : null;
   }
 
-  if (
-    productData.status === "loading-session" ||
-    productData.status === "loading-product"
-  ) {
+  if (productData.isLoading) {
     return (
       <div
         className={`space-y-4 ${params.styles ?? ""}`}
@@ -44,10 +66,10 @@ const SpecForm: React.FC<
     );
   }
 
-  if (productData.status !== "ready" || !productData.product) {
+  if (!productData.isSuccess || !productData.product) {
     if (!isAuthoring) return null;
     const message =
-      productData.status === "configuration-error"
+      productData.status === "idle"
         ? "Configure Product Source and its corresponding product ID on ProductContainer."
         : productData.status === "not-found"
           ? `Product ${productData.productId ?? ""} was not found.`
@@ -61,9 +83,9 @@ const SpecForm: React.FC<
   }
 
   const hasVisibleContent =
-    productData.specsStatus === "loading" ||
-    productData.specsStatus === "error" ||
-    (productData.specsStatus === "ready" && productData.specs.length > 0);
+    optionsData.status === "loading" ||
+    optionsData.status === "error" ||
+    (optionsData.status === "success" && specs.length > 0);
 
   if (!hasVisibleContent) {
     return isAuthoring ? (
@@ -83,20 +105,20 @@ const SpecForm: React.FC<
       id={params.RenderingIdentifier}
       data-component="SpecForm"
     >
-      {productData.specsStatus === "loading" && (
+      {optionsData.status === "loading" && (
         <p className="text-sm text-slate-600" aria-live="polite">
           Loading product options…
         </p>
       )}
 
-      {productData.specsStatus === "error" && (
+      {optionsData.status === "error" && (
         <div className="space-y-2 rounded border border-red-200 bg-red-50 p-3">
           <p className="text-sm text-red-700" role="alert">
-            {productData.specsError}
+            {optionsData.error?.message ?? "Unable to load product options."}
           </p>
           <button
             type="button"
-            onClick={productData.retrySpecs}
+            onClick={() => void optionsData.refetch()}
             className="text-sm font-semibold underline"
           >
             Retry
@@ -104,16 +126,22 @@ const SpecForm: React.FC<
         </div>
       )}
 
-      {productData.specsStatus === "ready" && productData.specs.length > 0 && (
+      {validationErrors.message && (
+        <p className="text-sm text-red-700" role="alert">
+          {validationErrors.message}
+        </p>
+      )}
+
+      {optionsData.status === "success" && specs.length > 0 && (
         <ProductSpecFields
-          specs={productData.specs}
-          selections={productData.selections}
-          errors={productData.validationErrors}
+          specs={specs}
+          selections={selectionData.selections}
+          errors={validationErrors.fields}
           defaultOptionControl={defaultOptionControl}
           currency={productData.product.currency}
           disabled={false}
-          optionAvailability={productData.optionAvailability}
-          onChange={productData.updateSelection}
+          optionAvailability={optionsData.optionAvailability}
+          onChange={selectionData.setSelection}
         />
       )}
     </div>

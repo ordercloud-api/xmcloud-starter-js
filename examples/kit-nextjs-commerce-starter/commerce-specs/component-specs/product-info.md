@@ -8,7 +8,7 @@ source: https://github.com/ordercloud-api/xmcloud-starter-js/tree/feature/commer
 
 # `ProductInfo`
 
-> Part of [../index.md](../index.md). Must be rendered inside a [ProductContainer](product-container.md) — reads product state from `ProductDataContext` rather than accepting props/fields of its own.
+> Part of [../index.md](../index.md). Must be rendered inside a [ProductContainer](product-container.md) — reads `useProduct()` from Content SDK rather than accepting props/fields of its own.
 
 ## Summary
 
@@ -18,22 +18,22 @@ Client leaf component that renders the currently-resolved product's gallery, nam
 - **Rendering type:** client (`"use client"`)
 - **Variants:** `Default` only
 - **Registered as:** `ProductInfo` in `.sitecore/component-map.ts` (client map, since it's a client component)
-- **Depends on:** `ProductDataContext` (via `useProductContext()`)
+- **Depends on:** Content SDK `useProduct()`
 
 ## Rendering states
 
-`ProductInfo` mirrors the same status-driven rendering pattern used by [AddToCart](add-to-cart.md) and [SpecForm](spec-form.md) — all three read `ProductDataContext.status` and render equivalent state UI, just with component-specific messaging and skeletons:
+`ProductInfo` mirrors the same status-driven rendering pattern used by [AddToCart](add-to-cart.md) and [SpecForm](spec-form.md):
 
 | `productData` / `status` | Rendering |
 |---|---|
-| `null` (no `ProductDataContext` in the tree) | Authoring: dashed amber warning box "ProductInfo must be placed inside a ProductContainer." Live: renders nothing. |
-| `"loading-session"` or `"loading-product"` | Animated skeleton: `aspect-square` image placeholder + two text-line placeholders, `aria-live="polite"`, screen-reader-only "Loading product information…" text. |
-| `"configuration-error"` | Authoring only: "Configure Product Source and its corresponding product ID on ProductContainer." Live: renders nothing. |
+| `null` (no SDK `ProductProvider` in the tree) | Authoring: dashed amber warning box "ProductInfo must be placed inside a ProductContainer." Live: renders nothing. |
+| `"loading"` | Animated skeleton with screen-reader-only "Loading product information…" text. |
+| `"idle"` | Authoring only: "Configure Product Source and its corresponding product ID on ProductContainer." Live: renders nothing. |
 | `"not-found"` | Authoring only: `` Product `{productId}` was not found. `` Live: renders nothing. |
 | `"error"` (or any other non-`"ready"` status) | Authoring only: `productData.error?.message` or a generic fallback message. Live: renders nothing. |
-| `"ready"` with `productData.product` | Full render (below). |
+| `"success"` with `productData.product` | Full render. |
 
-The authoring-only messages are wrapped in a dashed border box: `` <span className="font-medium">ProductInfo:</span> {message} ``. `isAuthoring = page.mode.isEditing || page.mode.isDesignLibrary`.
+The authoring-only messages are wrapped in a dashed border box. `isAuthoring` includes editing, preview and Design Library modes.
 
 ## Ready-state markup
 

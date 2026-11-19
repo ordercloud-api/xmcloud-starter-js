@@ -113,9 +113,9 @@ const readUrlState = ({
   return {
     search: showSearchBar
       ? params.has(SEARCH_PARAM)
-        ? params.get(SEARCH_PARAM)?.trim() ?? ""
-        : initialSearchTerm ?? ""
-      : initialSearchTerm ?? "",
+        ? (params.get(SEARCH_PARAM)?.trim() ?? "")
+        : (initialSearchTerm ?? "")
+      : (initialSearchTerm ?? ""),
     sort:
       showSort &&
       params.has(SORT_PARAM) &&
@@ -368,7 +368,11 @@ export default function OrderCloudProductList({
       setFacetDiscoveryReady(true);
       return;
     }
-    if (status !== "authenticated" || hasConfigurationError) {
+    if (
+      status !== "authenticated" ||
+      !productsService ||
+      hasConfigurationError
+    ) {
       setFacetDiscoveryReady(status !== "loading");
       return;
     }
@@ -431,7 +435,10 @@ export default function OrderCloudProductList({
       const next = { ...current };
       let changed = false;
       for (const [xpPath, values] of Object.entries(editableFacetDefaults)) {
-        if (!explicitFacetPaths.includes(xpPath) && next[xpPath] === undefined) {
+        if (
+          !explicitFacetPaths.includes(xpPath) &&
+          next[xpPath] === undefined
+        ) {
           next[xpPath] = values;
           changed = true;
         }
@@ -565,7 +572,7 @@ export default function OrderCloudProductList({
       setLoading(false);
       return;
     }
-    if (status !== "authenticated") {
+    if (status !== "authenticated" || !productsService) {
       loadMorePendingRef.current = false;
       setProducts([]);
       setMeta(undefined);

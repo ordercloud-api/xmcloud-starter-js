@@ -1,36 +1,36 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Cart, OrderCloudError } from "ordercloud-javascript-sdk";
-import type { CommerceRequest } from "../lib/commerce/client";
+import type { OrderCloudApiPath } from "@sitecore-content-sdk/commerce";
 import { CartService } from "../lib/commerce/cart/service";
 
-const request: CommerceRequest = (operation) =>
-  operation({ accessToken: "test-token" });
+type Request = <T>(path: OrderCloudApiPath, init?: RequestInit) => Promise<T>;
 
-afterEach(() => {
-  vi.restoreAllMocks();
-});
+afterEach(() => vi.restoreAllMocks());
 
 describe("CartService", () => {
-  it("loads and normalizes the active cart and its line items together", async () => {
-    vi.spyOn(Cart, "Get").mockResolvedValue({
-      ID: "cart-1",
-      Status: "Unsubmitted",
-      Currency: "USD",
-      Subtotal: 25,
-      Total: 27,
-      IsCalculated: true,
-    } as never);
-    vi.spyOn(Cart, "ListLineItems").mockResolvedValue({
-      Items: [
-        {
-          ID: "line-1",
-          ProductID: "SKU-1",
-          Product: { Name: "Configured product" },
-          Quantity: 2,
-          UnitPrice: 12.5,
-        },
-      ],
-    } as never);
+  it("loads and normalizes the active cart through the proxy service", async () => {
+    const request = vi.fn<Request>().mockImplementation(async (path) => {
+      if (path === "/v1/cart") {
+        return {
+          ID: "cart-1",
+          Status: "Unsubmitted",
+          Currency: "USD",
+          Subtotal: 25,
+          Total: 27,
+          IsCalculated: true,
+        };
+      }
+      return {
+        Items: [
+          {
+            ID: "line-1",
+            ProductID: "SKU-1",
+            Product: { Name: "Configured product" },
+            Quantity: 2,
+            UnitPrice: 12.5,
+          },
+        ],
+      };
+    }) as Request;
     const service = new CartService(request);
 
     await expect(service.get()).resolves.toEqual({
@@ -51,12 +51,14 @@ describe("CartService", () => {
         },
       ],
     });
+    expect(request).toHaveBeenCalledWith("/v1/cart", { method: "GET" });
+    expect(request).toHaveBeenCalledWith("/v1/cart/lineitems?pageSize=100", {
+      method: "GET",
+    });
   });
 
-  it("includes selected specs when adding a product", async () => {
-    const createLineItem = vi
-      .spyOn(Cart, "CreateLineItem")
-      .mockResolvedValue({} as never);
+  it("serializes selected specs through the proxy service", async () => {
+    const request = vi.fn<Request>().mockResolvedValue(undefined) as Request;
     const service = new CartService(request);
 
     await service.addItem({
@@ -68,44 +70,39 @@ describe("CartService", () => {
       ],
     });
 
-    expect(createLineItem).toHaveBeenCalledWith(
-      {
+    expect(request).toHaveBeenCalledWith("/v1/cart/lineitems", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         ProductID: "SKU-123",
         Quantity: 2,
         Specs: [
-          { SpecID: "SIZE", OptionID: "SMALL", Value: undefined },
-          { SpecID: "ENGRAVING", OptionID: undefined, Value: "Codex" },
+          { SpecID: "SIZE", OptionID: "SMALL" },
+          { SpecID: "ENGRAVING", Value: "Codex" },
         ],
-      },
-      { accessToken: "test-token" },
-    );
+      }),
+    });
   });
 
-  it("deletes a leftover cart and retries add after a 409", async () => {
-    const conflict = new OrderCloudError({
-      response: {
-        status: 409,
-        statusText: "Conflict",
-        data: {
-          Errors: [{ ErrorCode: "ObjectExists", Message: "Object already exists" }],
-        },
-      },
-    });
-    const createLineItem = vi
-      .spyOn(Cart, "CreateLineItem")
-      .mockRejectedValueOnce(conflict)
-      .mockResolvedValue({} as never);
-    const removeCart = vi.spyOn(Cart, "Delete").mockResolvedValue(undefined as never);
+  it("updates and removes line items with encoded paths", async () => {
+    const request = vi.fn<Request>().mockResolvedValue(undefined) as Request;
     const service = new CartService(request);
 
-    await service.addItem({ productId: "SKU-123", quantity: 1 });
+    await service.updateItem({ lineItemId: "line/1", quantity: 3 });
+    await service.removeItem("line/1");
 
-    expect(removeCart).toHaveBeenCalledWith({ accessToken: "test-token" });
-    expect(createLineItem).toHaveBeenCalledTimes(2);
+    expect(request).toHaveBeenCalledWith("/v1/cart/lineitems/line%2F1", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ Quantity: 3 }),
+    });
+    expect(request).toHaveBeenCalledWith("/v1/cart/lineitems/line%2F1", {
+      method: "DELETE",
+    });
   });
 
   it("marks checkout as pending on the unsubmitted cart", async () => {
-    const patch = vi.spyOn(Cart, "Patch").mockResolvedValue({} as never);
+    const request = vi.fn<Request>().mockResolvedValue(undefined) as Request;
     const service = new CartService(request);
 
     await service.markCheckoutPending({
@@ -113,15 +110,16 @@ describe("CartService", () => {
       stripeSessionId: "cs_test_123",
     });
 
-    expect(patch).toHaveBeenCalledWith(
-      {
+    expect(request).toHaveBeenCalledWith("/v1/cart", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         xp: {
           CheckoutStatus: "Pending",
           ocClientId: "buyer-client-id",
           stripeSessionId: "cs_test_123",
         },
-      },
-      { accessToken: "test-token" },
-    );
+      }),
+    });
   });
 });

@@ -1,137 +1,76 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 import {
-  getInitialSpecSelections,
   toCommerceProductSpec,
-  toLineItemSpecs,
-  validateSpecSelections,
-  type CommerceProductSpec,
-} from '../lib/commerce/products/specs';
+  toProductSpecErrors,
+  validateProductSpec,
+} from "../lib/commerce/products/specs";
 
-const specs: CommerceProductSpec[] = [
-  {
-    id: 'SIZE',
-    name: 'Size',
-    required: true,
-    allowOpenText: false,
-    definesVariant: true,
-    defaultOptionId: 'MEDIUM',
-    presentation: {},
-    validation: {},
-    options: [
-      { id: 'SMALL', name: 'Small', isOpenText: false, presentation: {} },
-      { id: 'MEDIUM', name: 'Medium', isOpenText: false, presentation: {} },
-    ],
-  },
-  {
-    id: 'ENGRAVING',
-    name: 'Engraving',
-    required: false,
-    allowOpenText: true,
-    definesVariant: false,
-    defaultValue: 'Hello',
-    options: [],
-    presentation: {},
-    validation: {},
-  },
-];
-
-describe('product spec selections', () => {
-  it('initializes product assignment defaults', () => {
-    expect(getInitialSpecSelections(specs)).toEqual({
-      SIZE: { optionId: 'MEDIUM', value: undefined },
-      ENGRAVING: { optionId: undefined, value: 'Hello' },
-    });
-  });
-
-  it('validates required options and selected open-text options', () => {
-    const openTextOptionSpecs: CommerceProductSpec[] = [
-      {
-        ...specs[0],
-        options: [
-          {
-            id: 'OTHER',
-            name: 'Other',
-            isOpenText: true,
-            presentation: {},
-          },
-        ],
-        defaultOptionId: undefined,
-      },
-    ];
-
-    expect(validateSpecSelections(specs, {})).toEqual({ SIZE: 'Select Size.' });
-    expect(
-      validateSpecSelections(openTextOptionSpecs, {
-        SIZE: { optionId: 'OTHER' },
-      }),
-    ).toEqual({ SIZE: 'Enter Size.' });
-  });
-
-  it('normalizes supported Spec and Option XP presentation', () => {
-    expect(
-      toCommerceProductSpec({
-        ID: 'COLOR',
-        Name: 'Color',
-        Required: true,
-        xp: {
-          presentation: {
-            control: 'swatches',
-            label: 'Finish',
-            helpText: 'Choose a finish',
-          },
+describe("product spec presentation", () => {
+  it("normalizes supported Spec and Option XP presentation", () => {
+    const mapped = toCommerceProductSpec({
+      ID: "COLOR",
+      Name: "Color",
+      Required: true,
+      xp: {
+        presentation: {
+          control: "swatches",
+          label: "Finish",
+          helpText: "Choose a finish",
         },
-        Options: [
-          {
-            ID: 'NAVY',
-            Value: 'Navy',
-            PriceMarkupType: 'Percentage',
-            PriceMarkup: 5,
-            xp: {
-              presentation: {
-                label: 'Midnight navy',
-                color: '#1e3a5f',
-                imageUrl: 'https://example.com/navy.jpg',
-                badge: 'Popular',
-              },
+      },
+      Options: [
+        {
+          ID: "NAVY",
+          Value: "Navy",
+          PriceMarkupType: "Percentage",
+          PriceMarkup: 5,
+          xp: {
+            presentation: {
+              label: "Midnight navy",
+              color: "#1e3a5f",
+              imageUrl: "https://example.com/navy.jpg",
+              badge: "Popular",
             },
           },
-        ],
-      }),
-    ).toMatchObject({
+        },
+      ],
+    });
+
+    expect(mapped).toMatchObject({
       presentation: {
-        control: 'swatches',
-        label: 'Finish',
-        helpText: 'Choose a finish',
+        control: "swatches",
+        label: "Finish",
+        helpText: "Choose a finish",
       },
       options: [
         {
-          priceMarkupType: 'Percentage',
+          priceMarkupType: "Percentage",
           priceMarkup: 5,
           presentation: {
-            label: 'Midnight navy',
-            color: '#1e3a5f',
-            imageUrl: 'https://example.com/navy.jpg',
-            badge: 'Popular',
+            label: "Midnight navy",
+            color: "#1e3a5f",
+            imageUrl: "https://example.com/navy.jpg",
+            badge: "Popular",
           },
         },
       ],
     });
   });
 
-  it('falls back safely when presentation XP is unsupported', () => {
+  it("rejects unsupported and unsafe presentation values", () => {
     expect(
       toCommerceProductSpec({
-        ID: 'COLOR',
-        Name: 'Color',
-        xp: { presentation: { control: 'carousel' } },
+        ID: "COLOR",
+        Name: "Color",
+        xp: { presentation: { control: "carousel" } },
         Options: [
           {
-            ID: 'RED',
-            Value: 'Red',
+            ID: "RED",
+            Value: "Red",
             xp: {
               presentation: {
-                color: 'url(javascript:bad)',
-                imageUrl: 'javascript:bad',
+                color: "url(javascript:bad)",
+                imageUrl: "javascript:bad",
               },
             },
           },
@@ -143,32 +82,42 @@ describe('product spec selections', () => {
     });
   });
 
-  it('validates configured open-text constraints', () => {
-    const configured: CommerceProductSpec[] = [
-      {
-        ...specs[1],
-        required: true,
-        presentation: { label: 'Message', textControl: 'text' },
+  it("adds starter XP constraints to the SDK selection result", () => {
+    const rawSpec = {
+      ID: "ENGRAVING",
+      Name: "Engraving",
+      Required: true,
+      AllowOpenText: true,
+      xp: {
+        presentation: { label: "Message", textControl: "text" },
         validation: { minLength: 3, maxLength: 8 },
       },
-    ];
+    };
 
-    expect(validateSpecSelections(configured, { ENGRAVING: { value: 'Hi' } })).toEqual({
-      ENGRAVING: 'Message must be at least 3 characters.',
+    expect(validateProductSpec(rawSpec, { value: "Hi" })).toEqual({
+      specId: "ENGRAVING",
+      code: "min-length",
+      params: { min: 3 },
     });
-    expect(validateSpecSelections(configured, { ENGRAVING: { value: 'Welcome' } })).toEqual({});
+    expect(validateProductSpec(rawSpec, { value: "Welcome" })).toBeUndefined();
   });
 
-  it('builds the selected OrderCloud line-item specs and omits blank optional values', () => {
+  it("localizes SDK and starter issue codes for the form UI", () => {
+    const spec = toCommerceProductSpec({
+      ID: "SIZE",
+      Name: "Size",
+      Required: true,
+      Options: [{ ID: "SMALL", Value: "Small" }],
+    });
+
     expect(
-      toLineItemSpecs(specs, {
-        SIZE: { optionId: 'SMALL' },
-        ENGRAVING: { value: '  Codex  ' },
-      }),
-    ).toEqual([
-      { SpecID: 'SIZE', OptionID: 'SMALL', Value: undefined },
-      { SpecID: 'ENGRAVING', OptionID: undefined, Value: 'Codex' },
-    ]);
-    expect(toLineItemSpecs(specs, { SIZE: { optionId: 'SMALL' } })).toHaveLength(1);
+      toProductSpecErrors(spec ? [spec] : [], [
+        { specId: "SIZE", code: "required" },
+        { specId: "", code: "variant-unavailable" },
+      ]),
+    ).toEqual({
+      fields: { SIZE: "Select Size." },
+      message: "This product option combination is unavailable.",
+    });
   });
 });

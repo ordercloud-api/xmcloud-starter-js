@@ -2,9 +2,12 @@
 
 import { useState } from "react";
 import type React from "react";
+import { useProduct } from "@sitecore-content-sdk/nextjs/commerce";
 import type { ComponentProps } from "@/lib/component-props";
-import { useProductContext } from "@/contexts/ProductDataContext";
-import type { CommerceProductImage } from "@/lib/commerce/products/types";
+import type {
+  CommerceProduct,
+  CommerceProductImage,
+} from "@/lib/commerce/products/types";
 
 const Gallery = ({
   images,
@@ -60,8 +63,9 @@ const Gallery = ({
 };
 
 export const Default: React.FC<ComponentProps> = ({ params, page }) => {
-  const productData = useProductContext();
-  const isAuthoring = page.mode.isEditing || page.mode.isDesignLibrary;
+  const productData = useProduct<CommerceProduct | null>({ optional: true });
+  const isAuthoring =
+    page.mode.isEditing || page.mode.isPreview || page.mode.isDesignLibrary;
 
   if (!productData) {
     return isAuthoring ? (
@@ -71,10 +75,7 @@ export const Default: React.FC<ComponentProps> = ({ params, page }) => {
     ) : null;
   }
 
-  if (
-    productData.status === "loading-session" ||
-    productData.status === "loading-product"
-  ) {
+  if (productData.isLoading) {
     return (
       <div
         className={`aspect-square animate-pulse rounded-2xl bg-slate-100 ${params.styles ?? ""}`}
@@ -87,10 +88,10 @@ export const Default: React.FC<ComponentProps> = ({ params, page }) => {
     );
   }
 
-  if (productData.status !== "ready" || !productData.product) {
+  if (!productData.isSuccess || !productData.product) {
     if (!isAuthoring) return null;
     const message =
-      productData.status === "configuration-error"
+      productData.status === "idle"
         ? "Configure Product Source and its corresponding product ID on ProductContainer."
         : productData.status === "not-found"
           ? `Product ${productData.productId ?? ""} was not found.`

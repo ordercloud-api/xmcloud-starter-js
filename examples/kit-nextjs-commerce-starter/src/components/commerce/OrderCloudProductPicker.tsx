@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useOrderCloud } from '@/contexts/OrderCloudContext';
-import { useMarketplaceClient } from '@/hooks/useMarketplaceClient';
-import type { CommerceProduct } from '@/lib/commerce/products/types';
+import { useEffect, useState } from "react";
+import { useOrderCloud } from "@/contexts/OrderCloudContext";
+import { useMarketplaceClient } from "@/hooks/useMarketplaceClient";
+import type { CommerceProduct } from "@/lib/commerce/products/types";
 import {
   parseProductReferenceList,
   serializeProductReferenceList,
-} from '@/lib/commerce/products/list-source';
+} from "@/lib/commerce/products/list-source";
 import {
   parseProductReference,
   serializeProductReference,
   type ProductReference,
-} from '@/lib/commerce/products/reference';
+} from "@/lib/commerce/products/reference";
 
 type OrderCloudProductPickerProps = {
   multiple: boolean;
@@ -31,7 +31,7 @@ export default function OrderCloudProductPicker({
     error: marketplaceError,
     isLoading: isMarketplaceLoading,
   } = useMarketplaceClient();
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [products, setProducts] = useState<CommerceProduct[]>([]);
   const [selected, setSelected] = useState<ProductReference[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
@@ -51,14 +51,14 @@ export default function OrderCloudProductPicker({
   }, [client, multiple]);
 
   useEffect(() => {
-    if (status !== 'authenticated') {
+    if (status !== "authenticated" || !productsService) {
       setProducts([]);
       setProductError(
-        status === 'error'
-          ? sessionError?.message ?? 'Unable to start commerce session'
+        status === "error"
+          ? (sessionError?.message ?? "Unable to start commerce session")
           : null,
       );
-      setLoadingProducts(status === 'loading');
+      setLoadingProducts(status === "loading");
       return;
     }
 
@@ -81,7 +81,7 @@ export default function OrderCloudProductPicker({
           setProductError(
             loadError instanceof Error
               ? loadError.message
-              : 'Unable to load OrderCloud products',
+              : "Unable to load OrderCloud products",
           );
         })
         .finally(() => setLoadingProducts(false));
@@ -114,7 +114,7 @@ export default function OrderCloudProductPicker({
     if (!client) return;
     setSaving(true);
     try {
-      await client.setValue('', true);
+      await client.setValue("", true);
       await client.closeApp();
     } finally {
       setSaving(false);
@@ -143,11 +143,16 @@ export default function OrderCloudProductPicker({
     <main className="mx-auto min-h-screen max-w-3xl space-y-5 bg-white p-6 text-slate-950">
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold">
-          {multiple ? 'Select OrderCloud products' : 'Select an OrderCloud product'}
+          {multiple
+            ? "Select OrderCloud products"
+            : "Select an OrderCloud product"}
         </h1>
         <p className="text-sm text-slate-600">
-          Search the buyer catalog, select {multiple ? 'products' : 'a product'}, and save{' '}
-          {multiple ? 'their stable OrderCloud IDs.' : 'its stable OrderCloud ID.'}
+          Search the buyer catalog, select {multiple ? "products" : "a product"}
+          , and save{" "}
+          {multiple
+            ? "their stable OrderCloud IDs."
+            : "its stable OrderCloud ID."}
         </p>
       </header>
 
@@ -165,7 +170,7 @@ export default function OrderCloudProductPicker({
 
       {marketplaceError && (
         <p className="rounded bg-amber-50 p-3 text-sm text-amber-800">
-          Open this picker from its SitecoreAI custom field to enable Save.{' '}
+          Open this picker from its SitecoreAI custom field to enable Save.{" "}
           {marketplaceError.message}
         </p>
       )}
@@ -190,11 +195,11 @@ export default function OrderCloudProductPicker({
               <label
                 key={product.id}
                 className={`flex cursor-pointer gap-3 rounded border p-3 ${
-                  isSelected ? 'border-blue-600 bg-blue-50' : 'border-slate-200'
+                  isSelected ? "border-blue-600 bg-blue-50" : "border-slate-200"
                 }`}
               >
                 <input
-                  type={multiple ? 'checkbox' : 'radio'}
+                  type={multiple ? "checkbox" : "radio"}
                   name="product"
                   checked={isSelected}
                   onChange={() => selectProduct({ id: product.id })}
@@ -216,7 +221,7 @@ export default function OrderCloudProductPicker({
                     <span className="block text-xs text-slate-500">
                       {[product.brand, product.category]
                         .filter(Boolean)
-                        .join(' · ')}
+                        .join(" · ")}
                     </span>
                   )}
                 </span>
@@ -244,10 +249,12 @@ export default function OrderCloudProductPicker({
           <button
             type="button"
             onClick={() => void save()}
-            disabled={!client || selected.length === 0 || saving || isMarketplaceLoading}
+            disabled={
+              !client || selected.length === 0 || saving || isMarketplaceLoading
+            }
             className="rounded bg-blue-700 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
-            {saving ? 'Saving…' : multiple ? 'Save products' : 'Save product'}
+            {saving ? "Saving…" : multiple ? "Save products" : "Save product"}
           </button>
         </div>
       </footer>

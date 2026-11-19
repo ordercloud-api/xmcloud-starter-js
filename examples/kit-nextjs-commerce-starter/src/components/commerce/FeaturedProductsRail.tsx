@@ -72,7 +72,7 @@ export default function FeaturedProductsRail({
       return;
     }
 
-    if (status !== "authenticated") {
+    if (status !== "authenticated" || !productsService) {
       setProducts([]);
       setLoading(status === "loading");
       setError(status === "error");

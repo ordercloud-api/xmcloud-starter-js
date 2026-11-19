@@ -10,7 +10,7 @@ import {
   type ProductSpecSelection,
   type ProductSpecSelections,
 } from "@/lib/commerce/products/specs";
-import type { ProductSpecOptionAvailability } from "@/lib/commerce/products/variants";
+import type { OptionAvailability } from "@sitecore-content-sdk/commerce";
 
 const selectedClasses = "border-slate-950 bg-slate-950 text-white";
 const unselectedClasses =
@@ -340,7 +340,7 @@ export const ProductSpecFields = ({
   defaultOptionControl: "dropdown" | "buttons";
   currency?: string;
   disabled: boolean;
-  optionAvailability?: ProductSpecOptionAvailability;
+  optionAvailability?: OptionAvailability;
   onChange: (specId: string, selection: ProductSpecSelection) => void;
 }) => {
   const idPrefix = useId();

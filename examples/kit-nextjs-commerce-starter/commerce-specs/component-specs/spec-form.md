@@ -18,7 +18,7 @@ Renders the set of OrderCloud Spec-driven product options (size, color, engravin
 - **Rendering type:** client (`"use client"`)
 - **Variants:** `Default` (dropdown default), `Buttons` (buttons default) — both implemented via a shared internal `SpecForm` component parameterized by `variantDefaultOptionControl`.
 - **Registered as:** `SpecForm` in `.sitecore/component-map.ts` (client map)
-- **Depends on:** `ProductDataContext` (`useProductContext()`), `ProductSpecFields` + `resolveDefaultOptionControl` (`@/components/commerce/ProductSpecFields`)
+- **Depends on:** Content SDK `useProduct()`, `useProductOptions()` and `useProductSelection()`; starter `ProductSpecFields` and XP validation/message mapping.
 
 ## Sitecore rendering parameters
 
@@ -48,18 +48,18 @@ Same status-driven pattern as [ProductInfo](product-info.md) / [AddToCart](add-t
 
 | `productData` / `status` | Rendering |
 |---|---|
-| `null` | Authoring: "SpecForm must be placed inside a ProductContainer." Live: nothing. |
-| `"loading-session"` / `"loading-product"` | Skeleton: `h-10 w-full animate-pulse` bar, `aria-live="polite"`, screen-reader "Loading product options…". |
-| `"configuration-error"` / `"not-found"` / `"error"` | Authoring-only message box, same three-way message logic as the other leaf components. |
-| `"ready"` with product | Renders the container `<div data-component="SpecForm">` (below) — spec loading is then a **second**, independent status inside that container. |
+| Hook state `null` | Authoring: "SpecForm must be placed inside a ProductContainer." Live: nothing. |
+| Product `"loading"` | Skeleton with "Loading product options…". |
+| Product `"idle"` / `"not-found"` / `"error"` | Authoring-only message box. |
+| Product `"success"` | Renders option sub-states below. |
 
 ## Ready-state: spec sub-states
 
-Once `productData.status === "ready"`, the component further branches on `productData.specsStatus` (specs are fetched separately from the product itself, via `ProductDataContext`):
+Once the product succeeds, the component branches on `useProductOptions().status`:
 
 - `"loading"` → "Loading product options…" (`aria-live="polite"`).
-- `"error"` → red alert box with `productData.specsError` and a "Retry" button calling `productData.retrySpecs()`.
-- `"ready"` and `productData.specs.length > 0` → renders `<ProductSpecFields specs={...} selections={...} errors={validationErrors} defaultOptionControl={...} currency={product.currency} disabled={false} onChange={updateSelection} />`. If `specs.length === 0`, nothing renders (a product with no specs shows an empty `SpecForm` container).
+- `"error"` → red alert and Retry calling `refetch()`.
+- `"success"` with specs → renders `ProductSpecFields` using SDK selections, option availability and localized starter validation messages.
 
 ## Known gaps
 

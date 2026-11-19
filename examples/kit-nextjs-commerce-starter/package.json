@@ -16,9 +16,13 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@sitecore-content-sdk/analytics-core": "^2.1.2",
+    "@sitecore-content-sdk/commerce": "file:../../../content-sdk-commerce-milestone-1/packages/commerce/package.tgz",
+    "@sitecore-content-sdk/content": "file:../../../content-sdk-commerce-milestone-1/packages/content/package.tgz",
+    "@sitecore-content-sdk/core": "file:../../../content-sdk-commerce-milestone-1/packages/core/package.tgz",
     "@sitecore-content-sdk/events": "^2.1.2",
-    "@sitecore-content-sdk/nextjs": "^2.4.0",
+    "@sitecore-content-sdk/nextjs": "file:../../../content-sdk-commerce-milestone-1/packages/nextjs/package.tgz",
     "@sitecore-content-sdk/personalize": "^2.1.0",
+    "@sitecore-content-sdk/react": "file:../../../content-sdk-commerce-milestone-1/packages/react/package.tgz",
     "@sitecore-marketplace-sdk/client": "^0.4.0",
     "axios": "^1.20.0",
     "jose": "^5.10.0",
@@ -47,6 +51,10 @@
     "vitest": "^5.0.1"
   },
   "overrides": {
+    "@sitecore-content-sdk/core": "file:../../../content-sdk-commerce-milestone-1/packages/core/package.tgz",
+    "@sitecore-content-sdk/content": "file:../../../content-sdk-commerce-milestone-1/packages/content/package.tgz",
+    "@sitecore-content-sdk/react": "file:../../../content-sdk-commerce-milestone-1/packages/react/package.tgz",
+    "@sitecore-content-sdk/commerce": "file:../../../content-sdk-commerce-milestone-1/packages/commerce/package.tgz",
     "postcss": ">=8.5.10",
     "picomatch": "4.0.4",
     "anymatch": {

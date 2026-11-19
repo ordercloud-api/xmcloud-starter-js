@@ -1,4 +1,7 @@
-import type { BuyerProduct, PriceSchedule } from "ordercloud-javascript-sdk";
+import type {
+  BuyerProduct,
+  PriceSchedule,
+} from "@sitecore-content-sdk/commerce";
 
 export type CommerceProduct = {
   id: string;
@@ -19,7 +22,7 @@ export type CommerceProductImage = {
   alt?: string;
 };
 
-type CommerceProductXp = {
+export type CommerceProductXp = {
   Images?: unknown;
   Brand?: unknown;
   Category?: unknown;

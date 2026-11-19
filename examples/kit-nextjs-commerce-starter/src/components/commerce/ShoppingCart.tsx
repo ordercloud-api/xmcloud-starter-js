@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import CartLineRow from '@/components/commerce/CartLineRow';
-import { useOrderCloud } from '@/contexts/OrderCloudContext';
-import { formatMoney } from '@/lib/commerce/cart/format';
-import type { CommerceCart } from '@/lib/commerce/cart/types';
-import { startHostedCheckout } from '@/lib/commerce/checkout/hosted';
-import { CHECKOUT_ORDER_ID_STORAGE_KEY } from '@/lib/commerce/checkout/status';
-import { buildProductDetailHref } from '@/lib/commerce/products/href';
-import { CATALOG_LIST_HREF } from '@/lib/commerce/products/list-source';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import CartLineRow from "@/components/commerce/CartLineRow";
+import { useOrderCloud } from "@/contexts/OrderCloudContext";
+import { formatMoney } from "@/lib/commerce/cart/format";
+import type { CommerceCart } from "@/lib/commerce/cart/types";
+import { startHostedCheckout } from "@/lib/commerce/checkout/hosted";
+import { CHECKOUT_ORDER_ID_STORAGE_KEY } from "@/lib/commerce/checkout/status";
+import { buildProductDetailHref } from "@/lib/commerce/products/href";
+import { CATALOG_LIST_HREF } from "@/lib/commerce/products/list-source";
 
 export default function ShoppingCart() {
   const { accessToken, cart, status, error: sessionError } = useOrderCloud();
@@ -22,10 +22,14 @@ export default function ShoppingCart() {
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (status !== 'authenticated') {
+    if (status !== "authenticated" || !cart) {
       setPayload(null);
-      setError(status === 'error' ? sessionError?.message ?? 'Unable to start commerce session' : null);
-      setLoading(status === 'loading');
+      setError(
+        status === "error"
+          ? (sessionError?.message ?? "Unable to start commerce session")
+          : null,
+      );
+      setLoading(status === "loading");
       return;
     }
 
@@ -42,7 +46,11 @@ export default function ShoppingCart() {
       .catch((loadError: unknown) => {
         if (!active) return;
         setPayload(null);
-        setError(loadError instanceof Error ? loadError.message : 'Unable to load cart');
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Unable to load cart",
+        );
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -59,7 +67,7 @@ export default function ShoppingCart() {
 
     try {
       if (!accessToken) {
-        throw new Error('Unable to start checkout without a shopper session.');
+        throw new Error("Unable to start checkout without a shopper session.");
       }
 
       const result = await startHostedCheckout(accessToken);
@@ -69,7 +77,9 @@ export default function ShoppingCart() {
       window.location.assign(result.redirectUrl);
     } catch (checkoutStartError) {
       setCheckoutError(
-        checkoutStartError instanceof Error ? checkoutStartError.message : 'Checkout failed',
+        checkoutStartError instanceof Error
+          ? checkoutStartError.message
+          : "Checkout failed",
       );
     } finally {
       setStartingCheckout(false);
@@ -77,33 +87,43 @@ export default function ShoppingCart() {
   };
 
   const changeQuantity = async (lineItemId: string, quantity: number) => {
-    if (quantity < 1) return;
+    if (quantity < 1 || !cart) return;
     setUpdatingId(lineItemId);
     setError(null);
     try {
       await cart.updateItem({ lineItemId, quantity });
       setRefreshSeed((value) => value + 1);
     } catch (updateError) {
-      setError(updateError instanceof Error ? updateError.message : 'Unable to update quantity');
+      setError(
+        updateError instanceof Error
+          ? updateError.message
+          : "Unable to update quantity",
+      );
     } finally {
       setUpdatingId(null);
     }
   };
 
   const removeItem = async (lineItemId: string) => {
+    if (!cart) return;
     setUpdatingId(lineItemId);
     setError(null);
     try {
       await cart.removeItem(lineItemId);
       setRefreshSeed((value) => value + 1);
     } catch (removeError) {
-      setError(removeError instanceof Error ? removeError.message : 'Unable to remove item');
+      setError(
+        removeError instanceof Error
+          ? removeError.message
+          : "Unable to remove item",
+      );
     } finally {
       setUpdatingId(null);
     }
   };
 
-  const itemCount = payload?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
+  const itemCount =
+    payload?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
   const isBusy = loading || startingCheckout;
 
   return (
@@ -112,18 +132,22 @@ export default function ShoppingCart() {
         <h1 className="text-3xl font-semibold tracking-tight">Shopping Cart</h1>
         {!loading && payload && payload.items.length > 0 && (
           <p className="text-muted-foreground mt-1 text-sm">
-            {itemCount} {itemCount === 1 ? 'item' : 'items'}
+            {itemCount} {itemCount === 1 ? "item" : "items"}
           </p>
         )}
       </div>
 
-      {loading && <p className="text-muted-foreground text-sm">Loading cart…</p>}
+      {loading && (
+        <p className="text-muted-foreground text-sm">Loading cart…</p>
+      )}
       {!loading && error && <p className="text-sm text-red-700">{error}</p>}
 
       {!loading && !error && payload && payload.items.length === 0 && (
         <div className="space-y-3 rounded-lg border px-5 py-8">
           <p className="font-medium">Your shopping cart is empty</p>
-          <p className="text-muted-foreground text-sm">Add a product, then come back here to check out.</p>
+          <p className="text-muted-foreground text-sm">
+            Add a product, then come back here to check out.
+          </p>
           <Link href="/products" className="text-sm font-semibold underline">
             Continue shopping
           </Link>
@@ -151,13 +175,13 @@ export default function ShoppingCart() {
           </ul>
 
           <div className="ml-auto w-full max-w-sm space-y-2">
-            {typeof payload.subtotal === 'number' && (
+            {typeof payload.subtotal === "number" && (
               <div className="text-muted-foreground flex justify-between text-sm">
                 <span>Subtotal</span>
                 <span>{formatMoney(payload.subtotal, payload.currency)}</span>
               </div>
             )}
-            {typeof payload.taxCost === 'number' && payload.taxCost > 0 && (
+            {typeof payload.taxCost === "number" && payload.taxCost > 0 && (
               <div className="text-muted-foreground flex justify-between text-sm">
                 <span>Tax</span>
                 <span>{formatMoney(payload.taxCost, payload.currency)}</span>
@@ -173,14 +197,19 @@ export default function ShoppingCart() {
               disabled={isBusy}
               className="border-primary bg-primary text-primary-foreground hover:opacity-90 mt-4 w-full rounded-md border px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {startingCheckout ? 'Starting checkout…' : 'Checkout'}
+              {startingCheckout ? "Starting checkout…" : "Checkout"}
             </button>
             <p className="text-center">
-              <Link href="/products" className="text-muted-foreground text-sm underline">
+              <Link
+                href="/products"
+                className="text-muted-foreground text-sm underline"
+              >
                 Continue shopping
               </Link>
             </p>
-            {checkoutError && <p className="text-sm text-red-700">{checkoutError}</p>}
+            {checkoutError && (
+              <p className="text-sm text-red-700">{checkoutError}</p>
+            )}
           </div>
         </>
       )}
